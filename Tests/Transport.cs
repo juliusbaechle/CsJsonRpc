@@ -1,5 +1,6 @@
 ﻿using JsonRpc;
 using System.Net;
+using System.Text.Json;
 
 namespace Tests
 {
@@ -17,12 +18,12 @@ namespace Tests
             bool pinged = false;
 
             var endPoint = new IPEndPoint(new IPAddress([127, 0, 0, 1]), 1234);
-            IClient client = new Client(endPoint, "client");
+            IActiveSocket client = new TcpActiveSocket(endPoint, "client");
             client.Log += Log;
-            client.ReceivedMsg += client.Send; // Loopback
+            client.ReceivedMsg += client.Send; // Echo
 
-            IServer server = new Server(1234, "server");
-            List<IClient> clients = [];
+            IPassiveSocket server = new TcpPassiveSocket(1234, "server");
+            List<IActiveSocket> clients = [];
             server.Log += Log;
             server.ClientConnected += (client) =>
             {
@@ -32,12 +33,27 @@ namespace Tests
                 clients.Add(client);
             };
 
-            while (!pinged) ;
+            while (!pinged);
 
             client.Dispose();
             server.Dispose();
             clients.ForEach(c => c.Dispose());
             Console.Out.WriteLine("END");
+        }
+
+
+        private class Order
+        {
+            public int Id { get; set; }
+            public string Name { get; set; } = "";
+        }
+
+        [TestMethod]
+        public void TestJson()
+        {
+            Order order = new Order { Id = 1, Name = "M Coffee"};
+            string json = JsonSerializer.Serialize(order);
+            Order? order2 = JsonSerializer.Deserialize<Order>(json);
         }
     }
 }

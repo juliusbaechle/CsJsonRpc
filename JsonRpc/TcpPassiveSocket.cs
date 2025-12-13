@@ -1,15 +1,11 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Net;
-using System.Text;
+﻿using System.Net;
 using System.Net.Sockets;
-using System.Runtime.CompilerServices;
 
 namespace JsonRpc
 {
-    public class Server : IServer, IDisposable
+    public class TcpPassiveSocket : IPassiveSocket, IDisposable
     {
-        public Server(ushort a_port, String a_name)
+        public TcpPassiveSocket(ushort a_port, String a_name)
         {
             m_name = a_name;
             m_socket = new Socket(AddressFamily.InterNetwork, SocketType.Stream, ProtocolType.Tcp);
@@ -32,7 +28,7 @@ namespace JsonRpc
             m_listenerThread.Join();
         }
 
-        public event IServer.ConnectHandler? ClientConnected;
+        public event IPassiveSocket.ConnectHandler? ClientConnected;
         public event LogHandler? Log;
 
         void Listen() {
@@ -55,15 +51,13 @@ namespace JsonRpc
 
         void OnNewClient(Socket socket) {
             Log?.Invoke("New client connected to '" + m_name + "' socket", LogSeverity.Info);
-            var client = new Client(socket, m_name);
+            var client = new TcpActiveSocket(socket, m_name);
             ClientConnected?.Invoke(client);
             client.StartListening();
         }
 
         volatile bool m_terminate;
         Thread m_listenerThread;
-        String m_address;
-        ushort m_port;
         String m_name = "";
         Socket m_socket;
     }

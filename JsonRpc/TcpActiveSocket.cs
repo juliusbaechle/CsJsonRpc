@@ -1,19 +1,12 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Diagnostics;
-using System.Net;
+﻿using System.Net;
 using System.Net.Sockets;
-using System.Reflection;
-using System.Runtime.CompilerServices;
 using System.Text;
-using System.Threading.Tasks;
-using System.Xml.Linq;
 
 namespace JsonRpc
 {
-    public class Client : IClient, IDisposable
+    public class TcpActiveSocket : IActiveSocket, IDisposable
     {
-        public Client(EndPoint a_endPoint, String a_name)
+        public TcpActiveSocket(EndPoint a_endPoint, String a_name)
         {
             m_endPoint = a_endPoint;
             m_name = a_name;
@@ -23,11 +16,12 @@ namespace JsonRpc
             SetConnected(m_client.Connected);
         }
 
-        public Client(Socket a_socket, String a_name)
+        public TcpActiveSocket(Socket a_socket, String a_name)
         {
             m_name = a_name;
             m_client = a_socket;
-            m_endPoint = a_socket.RemoteEndPoint;
+            if (a_socket.RemoteEndPoint != null) 
+                m_endPoint = a_socket.RemoteEndPoint;
             SetupSocket(m_client);
             Send("name: " + m_name);
             SetConnected(m_client.Connected);
@@ -79,8 +73,8 @@ namespace JsonRpc
         public string PeerName { get { return m_peerName; } }
         public bool Connected { get { return m_client.Connected; } }
 
-        public event IClient.ConnectionStatusHandler? ConnectionStatusChanged;
-        public event IClient.MsgHandler? ReceivedMsg;
+        public event IActiveSocket.ConnectionStatusHandler? ConnectionStatusChanged;
+        public event IActiveSocket.MsgHandler? ReceivedMsg;
         public event LogHandler? Log;
 
         public void Send(string a_msg)
@@ -186,7 +180,7 @@ namespace JsonRpc
         String m_peerName = "";
         String m_name = "";
         String m_readBuffer = "";
-        EndPoint m_endPoint;
+        EndPoint m_endPoint = new IPEndPoint(new IPAddress([127, 0, 0, 1]), 1234);
         Thread? m_listeningThread;
         bool m_connected = false;
 

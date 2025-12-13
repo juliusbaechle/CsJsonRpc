@@ -1,12 +1,6 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Diagnostics;
-using System.Text;
-using System.Xml.Schema;
-
-namespace JsonRpc
+﻿namespace JsonRpc
 {
-    public interface IClient : IDisposable
+    public interface IActiveSocket : IDisposable
     {
         ulong ClientId { get; }
         String PeerName { get; }
