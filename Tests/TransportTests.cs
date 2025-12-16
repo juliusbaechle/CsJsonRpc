@@ -5,7 +5,7 @@ using System.Text.Json;
 namespace Tests
 {
     [TestClass]
-    public sealed class Transport
+    public sealed class TransportTests
     {
         static void Log(String msg, LogSeverity severity)
         {
@@ -39,21 +39,6 @@ namespace Tests
             server.Dispose();
             clients.ForEach(c => c.Dispose());
             Console.Out.WriteLine("END");
-        }
-
-
-        private class Order
-        {
-            public int Id { get; set; }
-            public string Name { get; set; } = "";
-        }
-
-        [TestMethod]
-        public void TestJson()
-        {
-            Order order = new Order { Id = 1, Name = "M Coffee"};
-            string json = JsonSerializer.Serialize(order);
-            Order? order2 = JsonSerializer.Deserialize<Order>(json);
         }
     }
 }
