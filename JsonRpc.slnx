@@ -1,4 +1,12 @@
 <Solution>
+  <Folder Name="/doc/">
+    <File Path="todos.txt" />
+  </Folder>
+  <Folder Name="/Prototype/">
+    <Project Path="Prototype/Client/Client.csproj" />
+    <Project Path="Prototype/Reception_Common/Common.csproj" />
+    <Project Path="Prototype/Server/Server.csproj" />
+  </Folder>
   <Project Path="JsonRpc/JsonRpc.csproj" />
   <Project Path="Tests/Tests.csproj" Id="4b6fff2b-5a1a-4962-b747-7a9503dbad9b" />
 </Solution>
