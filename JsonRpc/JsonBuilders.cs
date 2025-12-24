@@ -8,40 +8,34 @@ namespace JsonRpc
 {
     public class JsonBuilders
     {
-        public static string Request(JsonNode a_id, string a_methodName, JsonNode a_params)
+        public static JsonNode Request(JsonNode? a_id, string a_methodName, JsonNode? a_params)
         {
-            var json = new JsonObject { { "jsonrpc", "2.0" }, { "method", a_methodName }, { "params", a_params }, { "id", a_id } };
-            return JsonSerializer.Serialize(json);
+            return new JsonObject { { "jsonrpc", "2.0" }, { "method", a_methodName }, { "params", a_params }, { "id", a_id } };
         }
 
-        public static string Request(JsonNode a_id, string a_methodName)
+        public static JsonNode Request(JsonNode? a_id, string a_methodName)
         {
-            var json = new JsonObject { { "jsonrpc", "2.0" }, { "method", a_methodName }, { "id", a_id } };
-            return JsonSerializer.Serialize(json);
+            return new JsonObject { { "jsonrpc", "2.0" }, { "method", a_methodName }, { "id", a_id } };
         }
 
-        public static string Notify(string a_methodName, JsonNode a_params)
+        public static JsonNode Notify(string a_methodName, JsonNode? a_params)
         {
-            var json = new JsonObject { { "jsonrpc", "2.0" }, { "method", a_methodName }, { "params", a_params } };
-            return JsonSerializer.Serialize(json);
+            return new JsonObject { { "jsonrpc", "2.0" }, { "method", a_methodName }, { "params", a_params } };
         }
 
-        public static string Notify(string a_methodName)
+        public static JsonNode Notify(string a_methodName)
         {
-            var json = new JsonObject { { "jsonrpc", "2.0" }, { "method", a_methodName } };
-            return JsonSerializer.Serialize(json);
+            return new JsonObject { { "jsonrpc", "2.0" }, { "method", a_methodName } };
         }
 
-        public static string Response(JsonNode a_id, JsonNode a_result)
+        public static JsonNode Response(JsonNode? a_id, JsonNode a_result)
         {
-            var json = new JsonObject { { "jsonrpc", "2.0" }, { "result", a_result }, { "id", a_id } };
-            return JsonSerializer.Serialize(json);
+            return new JsonObject { { "jsonrpc", "2.0" }, { "id", a_id }, { "result", a_result }};
         }
 
-        public static string Response(JsonNode a_id, JsonRpcException a_exception)
+        public static JsonNode Response(JsonNode? a_id, JsonRpcException a_exception)
         {
-            var json = new JsonObject { { "jsonrpc", "2.0" }, { "error", a_exception }, { "id", a_id } };
-            return JsonSerializer.Serialize(json);
+            return new JsonObject { { "jsonrpc", "2.0" }, { "error", a_exception }, { "id", a_id } };
         }
     }
 }

@@ -76,5 +76,14 @@ namespace Tests
             mock.Response = """{"id":1, "jsonrpc":"2.0", "result":"invalid result"}""";
             Assert.Throws<JsonRpcException>(() => client.Request<int>(1, "method"));
         }
+
+        [TestMethod]
+        public async Task SupportsUtf8()
+        {
+            var json = new JsonObject { { "Name", "Julius Bächle" } };
+            var str = JsonSerializer.Serialize(json);
+            json = JsonDocument.Parse(str).Deserialize<JsonObject>();
+            Assert.AreEqual("Julius Bächle", json["Name"].Deserialize<string>());
+        }
     }
 }

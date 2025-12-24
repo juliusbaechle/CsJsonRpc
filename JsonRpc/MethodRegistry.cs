@@ -1,10 +1,5 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Reflection;
-using System.Text;
-using System.Text.Json;
+﻿using System.Text.Json;
 using System.Text.Json.Nodes;
-using System.Xml.Linq;
 
 namespace JsonRpc
 {
@@ -20,12 +15,12 @@ namespace JsonRpc
                 m_paramMappings[a_methodName] = a_mapping;
         }
 
-        public bool Contains(String a_methodName)
+        public bool Contains(string a_methodName)
         {
             return m_methods.ContainsKey(a_methodName);
         }
 
-        public void Remove(String a_methodName)
+        public void Remove(string a_methodName)
         {
             if (!m_methods.ContainsKey(a_methodName))
                 throw new JsonRpcException(JsonRpcException.ErrorCode.internal_error, "'" + a_methodName + "' is not registered");
@@ -35,96 +30,49 @@ namespace JsonRpc
                 m_paramMappings.Remove(a_methodName);
         }
 
-        public async Task<string> Process(string a_methodName, JsonDocument a_params)
+        public JsonNode? Process(string a_methodName, JsonNode? a_params)
         {
             if (!m_methods.ContainsKey(a_methodName))
                 throw new JsonRpcException(JsonRpcException.ErrorCode.method_not_found, a_methodName);
 
-            var json_params = NormalizeParameters(a_methodName, a_params.RootElement);
-            var parameters = ConvertParameters(a_methodName, json_params);
-            return await CallDynamic(a_methodName, parameters);
+            var json_params = NormalizeParameters(a_methodName, a_params);
+            var parameters = ParamConverter.Convert(json_params, m_methods[a_methodName].Method.GetParameters());
+            var result = m_methods[a_methodName].DynamicInvoke(parameters);
+            return JsonSerializer.SerializeToNode(result);
         }
 
-        private JsonArray NormalizeParameters(String a_methodName, JsonElement a_params)
+        private JsonArray? NormalizeParameters(string a_methodName, JsonNode? a_params)
         {
-            if (a_params.ValueKind == JsonValueKind.Null)
+            if (a_params == null || a_params.GetValueKind() == JsonValueKind.Null)
                 return [];
 
-            if (a_params.ValueKind == JsonValueKind.Array)
-            {
-                var arr = a_params.Deserialize<JsonArray>();
-                if (arr == null)
-                    throw new JsonRpcException(JsonRpcException.ErrorCode.internal_error, "failed to parse " + a_params);
-                return arr;
-            }
+            if (a_params.GetValueKind() == JsonValueKind.Array)
+                return a_params.Deserialize<JsonArray>();
 
-            if (a_params.ValueKind == JsonValueKind.Object)
-            {
-                var obj = a_params.Deserialize<JsonObject>();
-                if (obj == null)
-                    throw new JsonRpcException(JsonRpcException.ErrorCode.invalid_params, "failed to parse " + a_params);
-
-                if (!m_paramMappings.ContainsKey(a_methodName))
-                    throw new JsonRpcException(JsonRpcException.ErrorCode.invalid_params, "procedure doesn't support named parameter");
-
-                JsonArray parameters = [];
-                foreach (var parameter in m_paramMappings[a_methodName])
-                {
-                    if (!obj.ContainsKey(parameter))
-                        throw new JsonRpcException(JsonRpcException.ErrorCode.invalid_params, "missing named parameter \"" + parameter + "\"");
-                    var param = obj[parameter];
-                    if (param == null)
-                        throw new JsonRpcException(JsonRpcException.ErrorCode.invalid_params, "parameter is null " + a_params);
-                    parameters.Add(param.DeepClone());
-                }
-                return parameters;
-            }
+            if (a_params.GetValueKind() == JsonValueKind.Object)
+                return NormalizeObjectParameters(a_methodName, a_params);
 
             throw new JsonRpcException(JsonRpcException.ErrorCode.invalid_request, "params field must be an array, object or null");
         }
 
-        object[] ConvertParameters(string a_methodName, JsonArray a_params)
+        private JsonArray NormalizeObjectParameters(string a_methodName, JsonNode a_params)
         {
-            if (m_methods[a_methodName].Method.GetParameters().Length != a_params.Count)
-                throw new JsonRpcException(JsonRpcException.ErrorCode.invalid_params, "wrong parameter count");
+            var obj = a_params.Deserialize<JsonObject>();
+            if (!m_paramMappings.ContainsKey(a_methodName))
+                throw new JsonRpcException(JsonRpcException.ErrorCode.invalid_params, "procedure doesn't support named parameter");
 
-            var method = m_methods[a_methodName];
-            List<object> converted_params = [];
-            for (int i = 0; i < a_params.Count; i++)
+            JsonArray parameters = [];
+            foreach (var parameter in m_paramMappings[a_methodName])
             {
-                var type = method.Method.GetParameters()[i].ParameterType;
-                var converted_param = TypeConversions.ConvertTo(a_params[i], type);
-                converted_params.Add(converted_param);
+                if (!obj.ContainsKey(parameter))
+                    throw new JsonRpcException(JsonRpcException.ErrorCode.invalid_params, "missing named parameter \"" + parameter + "\"");
+                var param = obj[parameter];
+                parameters.Add(param?.DeepClone());
             }
-            return converted_params.ToArray();
+            return parameters;
         }
 
-        private async Task<string> CallDynamic(string a_methodName, object[] a_params)
-        {
-            var method = m_methods[a_methodName];
-            if (method.Method.ReturnType == typeof(Task))
-            {
-                var obj = method.DynamicInvoke(a_params);
-                await TypeConversions.CastTo<Task>(obj);
-                return "null";
-            }
-            else if (method.Method.ReturnType.BaseType == typeof(Task))
-            {
-                var obj = method.DynamicInvoke(a_params);
-                var result = await TypeConversions.CastToReflected(obj, method.Method.ReturnType);
-                return JsonSerializer.Serialize(result);
-            }
-            else
-            {
-                return await Task.Run(() =>
-                {
-                    var obj = method.DynamicInvoke(a_params);
-                    return JsonSerializer.Serialize(obj);
-                });
-            }
-        }
-
-        private Dictionary<String, Delegate> m_methods = [];
-        private Dictionary<String, List<String>> m_paramMappings = [];
+        private Dictionary<string, Delegate> m_methods = [];
+        private Dictionary<string, List<string>> m_paramMappings = [];
     }
 }

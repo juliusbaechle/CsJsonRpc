@@ -24,22 +24,26 @@ namespace JsonRpc
 
         public T Request<T>(int a_id, string a_method)
         {
-            return CallMethod<T>(JsonBuilders.Request(a_id, a_method)).Result.GetValue<T>();
+            var request = JsonSerializer.Serialize(JsonBuilders.Request(a_id, a_method));
+            return CallMethod<T>(request).Result.GetValue<T>();
         }
 
         public T Request<T>(int a_id, string a_method, JsonNode a_params)
         {
-            return CallMethod<T>(JsonBuilders.Request(a_id, a_method, a_params)).Result.GetValue<T>();
+            var request = JsonSerializer.Serialize(JsonBuilders.Request(a_id, a_method, a_params));
+            return CallMethod<T>(request).Result.GetValue<T>();
         }
 
         public void Notify(string a_method)
         {
-            m_connector.Send(JsonBuilders.Notify(a_method));
+            var request = JsonSerializer.Serialize(JsonBuilders.Notify(a_method));
+            m_connector.Send(request);
         }
 
         public void Notify(string a_method, JsonNode a_params)
         {
-            m_connector.Send(JsonBuilders.Notify(a_method, a_params));
+            var request = JsonSerializer.Serialize(JsonBuilders.Notify(a_method, a_params));
+            m_connector.Send(request);
         }
 
         private JsonRpcResponse CallMethod<T>(string a_request)
@@ -49,12 +53,12 @@ namespace JsonRpc
                 var json = JsonDocument.Parse(m_connector.Send(a_request));
                 var response = json.Deserialize<JsonObject>();
                 if (response == null)
-                    throw new JsonRpcException(JsonRpcException.ErrorCode.parse_error, "couldn't parse response");
+                    throw new JsonRpcException(JsonRpcException.ErrorCode.parse_error, "response was null");
 
                 var error = response["error"];
                 if (error != null && error.GetValueKind() == JsonValueKind.Object)
                 {
-                    throw JsonRpcException.FromJson(error);
+                    throw (JsonRpcException) error;
                 } else if (error != null && error.GetValueKind() == JsonValueKind.String)
                 {
                     throw new JsonRpcException(JsonRpcException.ErrorCode.internal_error, error.GetValue<String>());
