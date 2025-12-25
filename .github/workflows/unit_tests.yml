@@ -27,10 +27,6 @@ jobs:
     - name: Build
       run: dotnet build --no-restore
     - name: Test
-      run: dotnet test --no-build --verbosity normal --collect:"Code Coverage;Format=Opencover;CoverageFileName=coverage.xml" --results-directory ./coverage
-    - name: Coveralls
-      uses: coverallsapp/github-action@v2
-      with:
-        github-token: ${{secrets.GITHUB_TOKEN}}
+      run: dotnet test --no-build --verbosity normal
 
          
