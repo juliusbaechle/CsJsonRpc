@@ -20,7 +20,7 @@ namespace JsonRpc
                 {
                     var converted_param = JsonSerializer.Deserialize(a_params[i], type);
                     converted_params.Add(converted_param);
-                } catch (JsonException ex)
+                } catch (JsonException)
                 {
                     throw new JsonRpcException(JsonRpcException.ErrorCode.invalid_params, "failed to convert " + a_params[i] + " to " + type);
                 }

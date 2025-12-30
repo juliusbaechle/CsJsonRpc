@@ -49,7 +49,7 @@ namespace JsonRpc
                 {
                     return """{"id":null, "error":{"code":-32600, "message": "invalid request: expected array or object"}, "jsonrpc":"2.0"}""";
                 }
-            } catch (JsonException ex)
+            } catch (JsonException)
             {
                 return """{"id":null, "error":{"code":-32700, "message": "parse error"}, "jsonrpc":"2.0"}""";
             }
