@@ -19,6 +19,14 @@ namespace JsonRpc
     {
         public Client(IClientConnector a_connector, Version a_version = Version.v2) {
             m_connector = a_connector;
+            m_exceptionConverter = new();
+            m_version = a_version;
+        }
+
+        public Client(IClientConnector a_connector, ExceptionConverter a_exceptionConverter, Version a_version = Version.v2)
+        {
+            m_connector = a_connector;
+            m_exceptionConverter = a_exceptionConverter;
             m_version = a_version;
         }
 
@@ -58,7 +66,7 @@ namespace JsonRpc
                 var error = response["error"];
                 if (error != null && error.GetValueKind() == JsonValueKind.Object)
                 {
-                    throw (JsonRpcException) error;
+                    throw m_exceptionConverter.Decode((JsonRpcException) error);
                 } else if (error != null && error.GetValueKind() == JsonValueKind.String)
                 {
                     throw new JsonRpcException(JsonRpcException.ErrorCode.internal_error, error.GetValue<String>());
@@ -83,6 +91,7 @@ namespace JsonRpc
         }
 
         private IClientConnector m_connector;
+        private ExceptionConverter m_exceptionConverter;
         private Version m_version;
     }
 }

@@ -69,7 +69,10 @@ namespace JsonRpc
             invalid_params = -32602,
             internal_error = -32603,
             server_error = -32000,
-            invalid
+            invalid,
+            exception_encoding_failed,
+            encoded_exception,
+            exception_decoding_failed
         }
     }
 }

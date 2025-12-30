@@ -11,7 +11,9 @@ namespace Tests.Mocks
             m_server = a_server;
         }
 
-        public string Send(string request) { return m_server.HandleRequest(request); }
+        public string Send(string request) { 
+            return m_server.HandleRequest(request); 
+        }
 
         JsonRpc.Server m_server;
     }

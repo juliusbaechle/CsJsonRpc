@@ -11,6 +11,13 @@ namespace JsonRpc
         public Server(MethodRegistry a_registry)
         {
             m_registry = a_registry;
+            m_exceptionConverter = new();
+        }
+
+        public Server(MethodRegistry a_registry, ExceptionConverter a_exceptionConverter)
+        {
+            m_registry = a_registry;
+            m_exceptionConverter = a_exceptionConverter;
         }
 
         public void Add(string a_methodName, Delegate a_delegate, List<string>? a_mapping = null)
@@ -61,13 +68,9 @@ namespace JsonRpc
             try
             {
                 return ProcessSingleRequest(a_request);
-            } catch (JsonRpcException ex)
-            {
-                return JsonBuilders.Response(id, ex);
             } catch (Exception ex)
             {
-                var new_ex = new JsonRpcException(JsonRpcException.ErrorCode.internal_error, "internal server error" + ex.Message);
-                return JsonBuilders.Response(id, new_ex);
+                return JsonBuilders.Response(id, m_exceptionConverter.Encode(ex));
             }
         }
 
@@ -123,5 +126,6 @@ namespace JsonRpc
         }
 
         private MethodRegistry m_registry;
+        private ExceptionConverter m_exceptionConverter;
     }
 }

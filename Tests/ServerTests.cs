@@ -112,7 +112,7 @@ namespace Tests
             // Method not found
             var request = JsonSerializer.Serialize(JsonBuilders.Request(1, "ThrowException"));
             var json = JsonDocument.Parse(server.HandleRequest(request)).Deserialize<JsonObject>();
-            Assert.AreEqual(JsonRpcException.ErrorCode.internal_error, json["error"]["code"].Deserialize<JsonRpcException.ErrorCode>());
+            Assert.AreEqual(JsonRpcException.ErrorCode.exception_encoding_failed, json["error"]["code"].Deserialize<JsonRpcException.ErrorCode>());
         }
 
         [TestMethod]
