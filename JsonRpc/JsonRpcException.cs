@@ -72,7 +72,8 @@ namespace JsonRpc
             invalid,
             exception_encoding_failed,
             encoded_exception,
-            exception_decoding_failed
+            exception_decoding_failed,
+            invalid_result
         }
     }
 }

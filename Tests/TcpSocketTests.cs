@@ -19,7 +19,7 @@ namespace Tests
             server.ClientConnected += (IActiveSocket socket) =>
             {
                 socket.ReceivedMsg += socket.Send;
-                Assert.AreNotEqual(socket.ClientId, client.ClientId);
+                Assert.AreNotEqual(socket.Id, client.Id);
             };
 
             while (rcv == "") 

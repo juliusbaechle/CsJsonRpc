@@ -2,7 +2,7 @@
 {
     public interface IActiveSocket : IDisposable
     {
-        public int ClientId { get; }
+        public int Id { get; }
 
         public void Send(string a_msg);
 

@@ -90,7 +90,7 @@ namespace JsonRpc
             m_connected = connected;            
         }
 
-        public int ClientId { get { return m_socket.GetHashCode(); } }
+        public int Id { get { return m_socket.GetHashCode(); } }
 
         public bool Connected { get { return m_connected; } }
 
