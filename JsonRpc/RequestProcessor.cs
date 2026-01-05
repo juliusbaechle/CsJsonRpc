@@ -8,12 +8,6 @@ namespace JsonRpc
 {
     public class RequestProcessor
     {
-        public RequestProcessor(MethodRegistry a_registry)
-        {
-            m_registry = a_registry;
-            m_exceptionConverter = new();
-        }
-
         public RequestProcessor(MethodRegistry a_registry, ExceptionConverter a_exceptionConverter)
         {
             m_registry = a_registry;

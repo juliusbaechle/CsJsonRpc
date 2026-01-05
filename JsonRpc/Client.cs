@@ -1,27 +1,23 @@
-﻿using System.Runtime.CompilerServices;
-using System.Text.Json;
+﻿using System.Text.Json;
 using System.Text.Json.Nodes;
 
 namespace JsonRpc
 {
     public class Client : IDisposable
     {
-        public Client(IActiveSocket a_socket) {
-            m_socket = a_socket;
-            m_exceptionConverter = new();
-            m_socket.ReceivedMsg += HandleResponse;
-        }
-
         public Client(IActiveSocket a_socket, ExceptionConverter a_exceptionConverter)
         {
             m_socket = a_socket;
             m_exceptionConverter = a_exceptionConverter;
+            m_socket.ReceivedMsg += HandleResponse;
         }
 
         public void Dispose()
         {
             m_socket.ReceivedMsg -= HandleResponse;
             m_mutex.WaitOne();
+            foreach (var r in m_backlog.Values)
+                r.SetCanceled();
             m_backlog.Clear();
             m_mutex.ReleaseMutex();
         }
@@ -38,43 +34,27 @@ namespace JsonRpc
             m_socket.Send(request);
         }
 
-        public int Request<T>(string a_method, Action<T> a_resultCallback, Action<Exception>? a_errorCallback = null)
+        public Task Request(string a_method, JsonNode? a_params = null)
         {
             int id = m_nextId++;
-            AppendHandle(id, new RequestHandle<T>(a_resultCallback, a_errorCallback));
-            var request = JsonSerializer.Serialize(JsonBuilders.Request(id, a_method));
-            m_socket.Send(request);
-            return id;
-        }
-
-        public int Request(string a_method, Action a_resultCallback, Action<Exception>? a_errorCallback = null)
-        {
-            int id = m_nextId++;
-            AppendHandle(id, new RequestHandle(a_resultCallback, a_errorCallback));
-            var request = JsonSerializer.Serialize(JsonBuilders.Request(id, a_method));
-            m_socket.Send(request);
-            return id;
-        }
-
-        public int Request<T>(string a_method, JsonNode a_params, Action<T> a_resultCallback, Action<Exception>? a_errorCallback = null)
-        {
-            int id = m_nextId++;
-            AppendHandle(id, new RequestHandle<T>(a_resultCallback, a_errorCallback));
+            var handle = new ResponseHandle();
+            AppendHandle(id, handle);
             var request = JsonSerializer.Serialize(JsonBuilders.Request(id, a_method, a_params));
             m_socket.Send(request);
-            return id;
+            return handle.Task;
         }
 
-        public int Request(string a_method, JsonNode a_params, Action a_resultCallback, Action<Exception>? a_errorCallback = null)
+        public Task<T> Request<T>(string a_method, JsonNode? a_params = null)
         {
             int id = m_nextId++;
-            AppendHandle(id, new RequestHandle(a_resultCallback, a_errorCallback));
+            var handle = new ResponseHandle<T>();
+            AppendHandle(id, handle);
             var request = JsonSerializer.Serialize(JsonBuilders.Request(id, a_method, a_params));
             m_socket.Send(request);
-            return id;
+            return handle.Task;
         }
 
-        private void AppendHandle(int a_id, RequestHandleBase a_requestHandle)
+        private void AppendHandle(int a_id, IResponseHandle a_requestHandle)
         {
             m_mutex.WaitOne();
             m_backlog[a_id] = a_requestHandle;
@@ -89,7 +69,10 @@ namespace JsonRpc
                 var json = JsonDocument.Parse(a_response);
                 response = json.Deserialize<JsonObject>();
                 if (response == null)
-                    throw new JsonRpcException(JsonRpcException.ErrorCode.parse_error, "response was null");
+                {
+                    Console.WriteLine("ERROR: response was null");
+                    return;
+                }
             } catch (JsonException ex) 
             {
                 Console.WriteLine("ERROR: invalid server response: " + ex.Message);
@@ -107,28 +90,28 @@ namespace JsonRpc
             {
                 if (response.ContainsKey("result") == response.ContainsKey("error"))
                 {
-                    handle.HandleException(new JsonRpcException(JsonRpcException.ErrorCode.invalid_result, """either "result" or "error" field must be contained"""));
+                    handle.SetException(new JsonRpcException(JsonRpcException.ErrorCode.invalid_result, """either "result" or "error" field must be contained"""));
                 }
                 else if (!response.ContainsKey("jsonrpc") || response["jsonrpc"].GetValue<string>() != "2.0")
                 {
-                    handle.HandleException(new JsonRpcException(JsonRpcException.ErrorCode.invalid_result, """ "jsonrpc" field must be "2.0" """));
+                    handle.SetException(new JsonRpcException(JsonRpcException.ErrorCode.invalid_result, """ "jsonrpc" field must be "2.0" """));
                 }
                 else if (response.ContainsKey("error") && response["error"].GetValueKind() == JsonValueKind.Object)
                 {
-                    handle.HandleException(m_exceptionConverter.Decode(response["error"]));
+                    handle.SetException(m_exceptionConverter.Decode(response["error"]));
                 } else
                 {
-                    handle.HandleResult(response["result"]);
+                    handle.SetResult(response["result"]);
                 }
             } catch(Exception ex)
             {
-                handle.HandleException(ex);
+                handle.SetException(ex);
             }
         }
 
-        private RequestHandleBase? TakeHandle(int a_id)
+        private IResponseHandle? TakeHandle(int a_id)
         {
-            RequestHandleBase? handle = null;
+            IResponseHandle? handle = null;
             m_mutex.WaitOne();
             if (m_backlog.ContainsKey(a_id))
             {
@@ -142,7 +125,7 @@ namespace JsonRpc
         private Mutex m_mutex = new();
         private IActiveSocket m_socket;
         private ExceptionConverter m_exceptionConverter;
-        private Dictionary<int, RequestHandleBase> m_backlog = [];
+        private Dictionary<int, IResponseHandle> m_backlog = [];
         private volatile int m_nextId = 0;
     }
 }

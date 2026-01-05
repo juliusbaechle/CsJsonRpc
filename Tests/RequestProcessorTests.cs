@@ -13,7 +13,7 @@ namespace Tests
         public async Task CallMethods()
         {
             var registry = new MethodRegistry();
-            var processor = new RequestProcessor(registry);
+            var processor = new RequestProcessor(registry, new());
             processor.Add("Subtract", (int minuend, int subtrahend) => { return minuend - subtrahend; }, ["Minuend", "Subtrahend"]);
             
             var request = JsonSerializer.Serialize(JsonBuilders.Request(null, "Subtract", new JsonObject { { "Minuend", 3 }, { "Subtrahend", 1 } }));
@@ -31,7 +31,7 @@ namespace Tests
         public async Task CallMethodWithNullValue()
         {
             var registry = new MethodRegistry();
-            var processor = new RequestProcessor(registry);
+            var processor = new RequestProcessor(registry, new());
             processor.Add("HandleNull", (JsonObject? obj) => { return; }, ["Object"]);
 
             var request = JsonSerializer.Serialize(JsonBuilders.Request(1, "HandleNull", new JsonObject { { "Object", null } }));
@@ -44,7 +44,7 @@ namespace Tests
         public async Task CallNotification()
         {
             var registry = new MethodRegistry();
-            var processor = new RequestProcessor(registry);
+            var processor = new RequestProcessor(registry, new());
 
             List<int> recv_params = [];
             processor.Add("SetParam", (List<int> a_params) => { recv_params = a_params; });
@@ -59,7 +59,7 @@ namespace Tests
         public async Task InvalidRequests()
         {
             var registry = new MethodRegistry();
-            var processor = new RequestProcessor(registry);
+            var processor = new RequestProcessor(registry, new());
 
             // Method not found
             var request = JsonSerializer.Serialize(JsonBuilders.Request(1, "foobar"));
@@ -106,7 +106,7 @@ namespace Tests
         public async Task ExceptionInMethod()
         {
             var registry = new MethodRegistry();
-            var processor = new RequestProcessor(registry);
+            var processor = new RequestProcessor(registry, new());
             processor.Add("ThrowException", () => { throw new ArgumentNullException(); });
 
             // Method not found
@@ -119,7 +119,7 @@ namespace Tests
         public async Task HandleBatchRequest()
         {
             var registry = new MethodRegistry();
-            var processor = new RequestProcessor(registry);
+            var processor = new RequestProcessor(registry, new());
             processor.Add("Add", (int a, int b) => { return a + b; });
             processor.Add("Increment", (int a) => { return a + 1; });
 

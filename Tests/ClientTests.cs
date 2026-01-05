@@ -13,19 +13,21 @@ namespace Tests
         public async Task CallMethods()
         {
             var mock = new ActiveSocketMock();
-            var client = new Client(mock);
+            var client = new Client(mock, new());
 
-            // Request, No parameters
-            int result = 0;
-            mock.Response = """{"id":0, "jsonrpc":"2.0", "result":1}""";
-            client.Request<int>("startOrder", (int id) => { result = id; });
-            Assert.AreEqual("""{"jsonrpc":"2.0","method":"startOrder","id":0}""", mock.CapturedRequest);
-            Assert.AreEqual(1, result);
+            // Void-Request, No parameters
+            mock.Response = """{"id":0, "jsonrpc":"2.0", "result":null}""";
+            await client.Request("startOrder");
+            Assert.AreEqual("""{"jsonrpc":"2.0","method":"startOrder","params":null,"id":0}""", mock.CapturedRequest);
 
-            // Request, Unnamed parameters
-            mock.Response = """{"id":1, "jsonrpc":"2.0", "result":1}""";
-            result = client.Request<int>("startOrder", new JsonArray { 1 }, (int id) => { result = id; });
-            Assert.AreEqual("""{"jsonrpc":"2.0","method":"startOrder","params":[1],"id":1}""", mock.CapturedRequest);
+            // Void-Request where result is not null
+            mock.Response = """{"id":1, "jsonrpc":"2.0", "result":"not null result"}""";
+            await client.Request("method");
+
+            // Int-Request, Unnamed parameters
+            mock.Response = """{"id":2, "jsonrpc":"2.0", "result":1}""";
+            var result = await client.Request<int>("startOrder", new JsonArray([1]));
+            Assert.AreEqual("""{"jsonrpc":"2.0","method":"startOrder","params":[1],"id":2}""", mock.CapturedRequest);
             Assert.AreEqual(1, result);
 
             // Notify, No parameters
@@ -41,39 +43,36 @@ namespace Tests
         public async Task ReceivesExceptions()
         {
             var mock = new ActiveSocketMock();
-            var client = new Client(mock);
+            var client = new Client(mock, new());
 
-            Exception? ex = null;
             var jsonRpcEx = new JsonRpcException(JsonRpcException.ErrorCode.internal_error, "exception occured");
             mock.Response = """{"id":0, "jsonrpc":"2.0", "error":""" + JsonSerializer.Serialize(jsonRpcEx) + "}";
-            client.Request<int>("startOrder", (r) => { }, (e) => { ex = e; });
-            Assert.IsNotNull(ex);
+            await Assert.ThrowsAsync<JsonRpcException>(async () => await client.Request<int>("startOrder"));
         }
-        // 
-        // [TestMethod]
-        // public async Task HandlesInvalidResponses()
-        // {
-        //     var mock = new ActiveSocketMock();
-        //     var client = new Client(mock);
-        // 
-        //     mock.Response = "(XXX---XXX)";
-        //     Assert.Throws<JsonRpcException>(() => client.Request<int>(1, "method"));
-        // 
-        //     mock.Response = """null""";
-        //     Assert.Throws<JsonRpcException>(() => client.Request<int>(1, "method"));
-        // 
-        //     mock.Response = """[1, 2, 3]""";
-        //     Assert.Throws<JsonRpcException>(() => client.Request<int>(1, "method"));
-        // 
-        //     mock.Response = """{"id":1, "jsonrpc":"2.0"}""";
-        //     Assert.Throws<JsonRpcException>(() => client.Request<int>(1, "method"));
-        // 
-        //     mock.Response = """{"id":1, "error":"dummy"}""";
-        //     Assert.Throws<JsonRpcException>(() => client.Request<int>(1, "method"));
-        // 
-        //     mock.Response = """{"id":1, "jsonrpc":"2.0", "result":"invalid result"}""";
-        //     Assert.Throws<JsonRpcException>(() => client.Request<int>(1, "method"));
-        // }
+
+        [TestMethod]
+        public async Task HandlesInvalidResponses()
+        {
+            var mock = new ActiveSocketMock();
+            var client = new Client(mock, new());
+        
+            mock.Response = "(XXX---XXX)";
+            client.Request<int>("method");
+
+            mock.Response = "null";
+            client.Request("method");
+
+            mock.Response = """{"id":2, "jsonrpc":"2.0"}""";
+            await Assert.ThrowsAsync<JsonRpcException>(async () => await client.Request<int>("method"));
+        
+            mock.Response = """{"id":3, "error":"dummy"}""";
+            await Assert.ThrowsAsync<JsonRpcException>(async () => await client.Request<int>("method"));
+        
+            mock.Response = """{"id":4, "jsonrpc":"2.0", "result":"invalid result"}""";
+            await Assert.ThrowsAsync<InvalidOperationException>(async () => await client.Request<int>("method"));
+
+            client.Dispose();
+        }
 
         [TestMethod]
         public async Task SupportsUtf8()
