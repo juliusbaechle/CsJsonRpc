@@ -19,10 +19,15 @@ namespace Tests.Mocks
         {            
         }
 
+        public Task ConnectAsync()
+        {
+            throw new NotImplementedException();
+        }
+
         public string Response { get; set; } = "";
         public string CapturedRequest { get; set; } = "";
 
-        public int Id { get; } = 0;
+        public long ConnectionId { get; } = 0;
 
         public bool Connected { get; } = true;
     }

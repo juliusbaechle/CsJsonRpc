@@ -10,17 +10,21 @@ namespace Tests
         [TestMethod]
         public async Task EchoMessage()
         {
-            string rcv = "";
-            var client = new ActiveTcpSocket(new IPEndPoint(IPAddress.Loopback, 1234));
-            client.ReceivedMsg += (string s) => { rcv = s; };
-            client.ConnectionChanged += (bool b) => { client.Send("Hello World!"); };
-
             var server = new PassiveTcpSocket(new IPEndPoint(IPAddress.Loopback, 1234));
+            var client = new ActiveTcpSocket(new IPEndPoint(IPAddress.Loopback, 1234));
+
+            string rcv = "";
+            client.ReceivedMsg += (s) => rcv = s;
+
             server.ClientConnected += (IActiveSocket socket) =>
             {
                 socket.ReceivedMsg += socket.Send;
-                Assert.AreNotEqual(socket.Id, client.Id);
+                Assert.AreEqual(socket.ConnectionId, client.ConnectionId);
             };
+
+            client.ConnectAsync().Wait();
+
+            client.Send("Hello World!");
 
             while (rcv == "") 
                 Thread.Sleep(5);
@@ -38,11 +42,15 @@ namespace Tests
             var client = new ActiveTcpSocket(new IPEndPoint(IPAddress.Loopback, 1234));
             client.ConnectionChanged += (bool b) => { connected = b; };
 
+            IActiveSocket socket = null;
             var server = new PassiveTcpSocket(new IPEndPoint(IPAddress.Loopback, 1234));
-            server.ClientConnected += (IActiveSocket socket) =>
-            {
-                socket.Dispose();
-            };
+            server.ClientConnected += (s) => socket = s;
+
+            client.ConnectAsync();
+
+            while (socket == null)
+                Thread.Sleep(5);
+            socket.Dispose();
 
             while (connected)
                 Thread.Sleep(5);

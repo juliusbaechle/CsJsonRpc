@@ -29,9 +29,15 @@ namespace JsonRpc
                 {
                     var socket = await m_socket.AcceptAsync(m_terminate.Token);
                     if (socket != null)
-                        ClientConnected(new ActiveTcpSocket(socket));
+                    {
+                        var activeSocket = new ActiveTcpSocket(socket);
+                        ClientConnected(activeSocket);
+                        activeSocket.StartListening();
+                    }
                 }
-            } catch (Exception) { }            
+            } catch (Exception ex) { 
+                Console.WriteLine(ex.ToString());
+            }            
         }
 
         public event Action<IActiveSocket> ClientConnected = (IActiveSocket s) => { };

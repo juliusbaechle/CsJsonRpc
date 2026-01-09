@@ -13,20 +13,22 @@ namespace JsonRpc
             m_connected = false;
             m_endPoint = a_endPoint;
             m_thread = new Thread(new ThreadStart(Run));
-            m_thread.Start();
         }
 
-        public ActiveTcpSocket(Socket a_socket)
+        internal ActiveTcpSocket(Socket a_socket)
         {
             m_socket = a_socket;
             m_socket.Blocking = true;
             m_connected = true;
-            m_endPoint = a_socket.RemoteEndPoint;
             m_thread = new Thread(new ThreadStart(Run));
+        }
+
+        internal void StartListening()
+        {
             m_thread.Start();
         }
 
-        public async void Dispose()
+        public void Dispose()
         {
             m_terminate.Cancel();
             m_thread?.Join();
@@ -87,10 +89,14 @@ namespace JsonRpc
         {
             if (m_connected != connected)
                 ConnectionChanged(connected);
-            m_connected = connected;            
+            if (connected)
+                m_connectSource.SetResult();
+            else
+                m_connectSource = new();
+            m_connected = connected;
         }
 
-        public int Id { get { return m_socket.GetHashCode(); } }
+        public long ConnectionId { get { return (m_socket.RemoteEndPoint.GetHashCode() << 32) ^ m_socket.LocalEndPoint.GetHashCode(); } }
 
         public bool Connected { get { return m_connected; } }
 
@@ -100,15 +106,22 @@ namespace JsonRpc
 
         public void Send(string a_msg)
         {
-            var encoded = Encoding.UTF8.GetBytes(a_msg + (char) 3);
+            var encoded = Encoding.UTF8.GetBytes(a_msg + (char)3);
             var buffer = new ArraySegment<byte>(encoded, 0, encoded.Length);
             m_socket.Send(buffer);
         }
 
+        public Task ConnectAsync()
+        {
+            StartListening();
+            return m_connectSource.Task;
+        }
+
         private volatile bool m_connected;
+        private TaskCompletionSource m_connectSource = new();
         private readonly EndPoint m_endPoint;
         Socket m_socket;
         CancellationTokenSource m_terminate = new();
-        Thread? m_thread;
+        Thread m_thread;
     }
 }
