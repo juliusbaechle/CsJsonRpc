@@ -25,18 +25,27 @@ namespace JsonRpc
             m_mutex.ReleaseMutex();
         }
 
+        public void Add(string a_methodName, Delegate a_delegate, List<string>? a_mapping = null) 
+        { m_methodRegistry.Add(a_methodName, a_delegate, a_mapping); }
+
+        public void Remove(string a_methodName)
+        { m_methodRegistry.Remove(a_methodName); }
+
+        public bool Contains(string a_methodName)
+        { return m_methodRegistry.Contains(a_methodName); }
+
         private void AddClient(IActiveSocket a_socket)
         {
             m_mutex.WaitOne();
-            m_activeSockets.Add(a_socket.Id, a_socket);
+            m_activeSockets.Add(a_socket.ConnectionId, a_socket);
             var requestProcessor = new RequestProcessor(m_methodRegistry, m_exceptionConverter);
             a_socket.ReceivedMsg += (s) => { a_socket.Send(requestProcessor.HandleRequest(s)); };
-            a_socket.ConnectionChanged += (bool c) => { if (!c) OnClientDisconnected(a_socket.Id); };
-            m_requestProcessors.Add(a_socket.Id, requestProcessor);
+            a_socket.ConnectionChanged += (bool c) => { if (!c) OnClientDisconnected(a_socket.ConnectionId); };
+            m_requestProcessors.Add(a_socket.ConnectionId, requestProcessor);
             m_mutex.ReleaseMutex();
         }
 
-        private void OnClientDisconnected(int a_id)
+        private void OnClientDisconnected(long a_id)
         {
             m_mutex.WaitOne();
             m_activeSockets.Remove(a_id);
@@ -48,7 +57,7 @@ namespace JsonRpc
         private IPassiveSocket m_passiveSocket;
         private ExceptionConverter m_exceptionConverter;
         private MethodRegistry m_methodRegistry;
-        private Dictionary<int, IActiveSocket> m_activeSockets = [];
-        private Dictionary<int, RequestProcessor> m_requestProcessors = [];
+        private Dictionary<long, IActiveSocket> m_activeSockets = [];
+        private Dictionary<long, RequestProcessor> m_requestProcessors = [];
     }
 }

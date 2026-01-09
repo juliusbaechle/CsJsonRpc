@@ -25,6 +25,13 @@ namespace JsonRpc
             return contained;
         }
 
+        public List<string> Methods { get { 
+                m_lock.AcquireReaderLock(0);
+                var result = m_methods.Keys.ToList<string>();
+                m_lock.ReleaseReaderLock();
+                return result;
+        } }
+
         public void Remove(string a_methodName)
         {
             m_lock.AcquireWriterLock(0);

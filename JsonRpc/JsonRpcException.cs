@@ -73,7 +73,8 @@ namespace JsonRpc
             exception_encoding_failed,
             encoded_exception,
             exception_decoding_failed,
-            invalid_result
+            invalid_result,
+            subscription_not_found
         }
     }
 }

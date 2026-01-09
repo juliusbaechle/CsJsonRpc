@@ -88,7 +88,7 @@ namespace JsonRpc
                 throw new JsonRpcException(JsonRpcException.ErrorCode.invalid_request, """invalid request: method field must be a string""");
             if (a_request.ContainsKey("id") && !HasValidId(a_request))
                 throw new JsonRpcException(JsonRpcException.ErrorCode.invalid_request, """invalid request: id field must be a number, string or null""");
-            if (a_request.ContainsKey("params") && !(a_request["params"].GetValueKind() == JsonValueKind.Array || a_request["params"].GetValueKind() == JsonValueKind.Object || a_request["params"].GetValueKind() == JsonValueKind.Null))
+            if (a_request.ContainsKey("params") && !(a_request["params"] == null || a_request["params"].GetValueKind() == JsonValueKind.Array || a_request["params"].GetValueKind() == JsonValueKind.Object))
                 throw new JsonRpcException(JsonRpcException.ErrorCode.invalid_request, """invalid request: params field must be an array, object or null""");
             if (!a_request.ContainsKey("params") || HasKeyType(a_request, "params", JsonValueKind.Null))
                 a_request["params"] = new JsonArray();
