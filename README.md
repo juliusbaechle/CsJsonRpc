@@ -2,7 +2,7 @@
 [![Unit Tests](https://github.com/juliusbaechle/CsJsonRpc/actions/workflows/unit_tests.yml/badge.svg)](https://github.com/juliusbaechle/CsJsonRpc/actions/workflows/unit_tests.yml)
 [![CodeQL](https://github.com/juliusbaechle/CsJsonRpc/actions/workflows/codeql.yml/badge.svg)](https://github.com/juliusbaechle/CsJsonRpc/actions/workflows/codeql.yml)
 
-Library supporting interfaces like
+JSON-RPC Library supporting interfaces like
 
 ```csharp
 public interface IReceptionClient : IDisposable
