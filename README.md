@@ -2,5 +2,19 @@
 [![Unit Tests](https://github.com/juliusbaechle/CsJsonRpc/actions/workflows/unit_tests.yml/badge.svg)](https://github.com/juliusbaechle/CsJsonRpc/actions/workflows/unit_tests.yml)
 [![CodeQL](https://github.com/juliusbaechle/CsJsonRpc/actions/workflows/codeql.yml/badge.svg)](https://github.com/juliusbaechle/CsJsonRpc/actions/workflows/codeql.yml)
 
-C# JsonRpc Library
+Library supporting interfaces like
 
+```csharp
+    public interface IReceptionClient : IDisposable
+    {
+        public Task<int> AppendOrder(Order a_order);
+
+        /// May throw OrderNotFoundException
+        public void StartOrder(int a_id);
+
+        /// May throw OrderNotFoundException
+        public Task<Order> GetOrder(int a_id);
+
+        public event Action<int, Order.EState> OrderStateChanged;
+    }
+```
