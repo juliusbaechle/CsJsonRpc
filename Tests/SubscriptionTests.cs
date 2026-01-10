@@ -10,7 +10,7 @@ namespace Tests
     public sealed class SubscriptionTests
     {
         [TestMethod]
-        public async Task CanConnectMultipleSubscribers()
+        public async Task NormalUseCase()
         {
             IPEndPoint serverEndpoint = new(IPAddress.Loopback, 1000);
             IPEndPoint publisherEndpoint = new(IPAddress.Loopback, 1001);
@@ -36,6 +36,11 @@ namespace Tests
 
             publisher.Publish("Subscription");
             await subscriberCalled.Task;
+
+            serverSocket.Dispose();
+            clientSocket.Dispose();
+            publisherSocket.Dispose();
+            subscriberSocket.Dispose();
         }
     }
 }

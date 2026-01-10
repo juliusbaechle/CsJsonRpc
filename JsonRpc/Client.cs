@@ -12,6 +12,11 @@ namespace JsonRpc
             m_socket.ReceivedMsg += HandleResponse;
         }
 
+        public Task ConnectAsync()
+        {
+            return m_socket.ConnectAsync();
+        }
+
         public void Dispose()
         {
             m_socket.ReceivedMsg -= HandleResponse;

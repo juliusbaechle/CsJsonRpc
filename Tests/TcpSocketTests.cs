@@ -10,11 +10,17 @@ namespace Tests
         [TestMethod]
         public async Task EchoMessage()
         {
-            var server = new PassiveTcpSocket(new IPEndPoint(IPAddress.Loopback, 1234));
-            var client = new ActiveTcpSocket(new IPEndPoint(IPAddress.Loopback, 1234));
+            var endpoint = new IPEndPoint(IPAddress.Loopback, 1234);
+            var server = new PassiveTcpSocket(endpoint);
+            var client = new ActiveTcpSocket(endpoint);
 
             string rcv = "";
-            client.ReceivedMsg += (s) => rcv = s;
+            TaskCompletionSource receivedTCS = new();
+            client.ReceivedMsg += (s) =>
+            {
+                rcv = s;
+                receivedTCS.SetResult();
+            };
 
             server.ClientConnected += (IActiveSocket socket) =>
             {
@@ -22,12 +28,10 @@ namespace Tests
                 Assert.AreEqual(socket.ConnectionId, client.ConnectionId);
             };
 
-            client.ConnectAsync().Wait();
-
+            await client.ConnectAsync();
             client.Send("Hello World!");
 
-            while (rcv == "") 
-                Thread.Sleep(5);
+            await receivedTCS.Task;
             Assert.AreEqual("Hello World!", rcv);
             Assert.IsTrue(client.Connected);
 
@@ -38,22 +42,24 @@ namespace Tests
         [TestMethod]
         public async Task Disconnects()
         {
-            bool connected = true;
+            TaskCompletionSource disconnectTCS = new();
             var client = new ActiveTcpSocket(new IPEndPoint(IPAddress.Loopback, 1234));
-            client.ConnectionChanged += (bool b) => { connected = b; };
+            client.ConnectionChanged += (bool b) => { disconnectTCS.SetResult(); };
 
             IActiveSocket socket = null;
+            TaskCompletionSource clientConnectedTCS = new();
             var server = new PassiveTcpSocket(new IPEndPoint(IPAddress.Loopback, 1234));
-            server.ClientConnected += (s) => socket = s;
+            server.ClientConnected += (s) =>
+            {
+                socket = s;
+                clientConnectedTCS.SetResult();
+            };
 
             client.ConnectAsync();
+            await clientConnectedTCS.Task;
 
-            while (socket == null)
-                Thread.Sleep(5);
             socket.Dispose();
-
-            while (connected)
-                Thread.Sleep(5);
+            await disconnectTCS.Task;
 
             client.Dispose();
             server.Dispose();

@@ -20,11 +20,12 @@ namespace JsonRpc
             m_socket = a_socket;
             m_socket.Blocking = true;
             m_connected = true;
-            m_thread = new Thread(new ThreadStart(Run));
+            m_endPoint = a_socket.RemoteEndPoint;
         }
 
         internal void StartListening()
         {
+            m_thread = new Thread(new ThreadStart(Run));
             m_thread.Start();
         }
 
@@ -36,7 +37,7 @@ namespace JsonRpc
             m_socket.Dispose();
         }
 
-        private void Run()
+        private async void Run()
         {
             try
             {
@@ -44,24 +45,19 @@ namespace JsonRpc
                 {
                     if (m_connected)
                     {
-                        ConnectedState();
+                        await ConnectedState();
                     }
                     else
                     {
-                        NotConnectedState();
+                        await m_socket.ConnectAsync(m_endPoint, m_terminate.Token);
+                        SetConnected(m_socket.Connected);
                     }
                 }
             }
             catch (Exception) { }
         }
 
-        private void NotConnectedState()
-        {
-            m_socket.ConnectAsync(m_endPoint, m_terminate.Token).AsTask().Wait();
-            SetConnected(m_socket.Connected);
-        }
-
-        private void ConnectedState()
+        private async Task ConnectedState()
         {
             string buffer = "";
             while (m_connected && !m_terminate.IsCancellationRequested)
@@ -69,7 +65,7 @@ namespace JsonRpc
                 var arr = new byte[4096];
                 var arr_seg = new ArraySegment<byte>(arr);
                 
-                var bytes_rec = m_socket.ReceiveAsync(arr_seg, m_terminate.Token).AsTask().Result;
+                var bytes_rec = await m_socket.ReceiveAsync(arr_seg, m_terminate.Token);
                 if (bytes_rec == 0)
                 {
                     SetConnected(false);
@@ -79,6 +75,7 @@ namespace JsonRpc
                 buffer = buffer + Encoding.UTF8.GetString(arr, 0, bytes_rec);
                 if (buffer.Last() == 3)
                 {
+                    Console.WriteLine("DEBUG: Received: " + buffer);
                     ReceivedMsg(buffer.Substring(0, buffer.Length - 1));
                     buffer = "";
                 }
@@ -89,14 +86,18 @@ namespace JsonRpc
         {
             if (m_connected != connected)
                 ConnectionChanged(connected);
+            m_connected = connected;
             if (connected)
                 m_connectSource.SetResult();
             else
                 m_connectSource = new();
-            m_connected = connected;
         }
 
-        public long ConnectionId { get { return (m_socket.RemoteEndPoint.GetHashCode() << 32) ^ m_socket.LocalEndPoint.GetHashCode(); } }
+        public long ConnectionId { get {
+            var remoteHash = m_socket.RemoteEndPoint?.GetHashCode();
+            var localHash = m_socket.LocalEndPoint?.GetHashCode();
+            return (remoteHash ?? 0 << 32) ^ localHash ?? 0;
+        } }
 
         public bool Connected { get { return m_connected; } }
 
@@ -106,6 +107,7 @@ namespace JsonRpc
 
         public void Send(string a_msg)
         {
+            Console.WriteLine("DEBUG: Sent: " + a_msg);
             var encoded = Encoding.UTF8.GetBytes(a_msg + (char)3);
             var buffer = new ArraySegment<byte>(encoded, 0, encoded.Length);
             m_socket.Send(buffer);
@@ -113,7 +115,7 @@ namespace JsonRpc
 
         public Task ConnectAsync()
         {
-            StartListening();
+            m_thread.Start();
             return m_connectSource.Task;
         }
 
@@ -122,6 +124,6 @@ namespace JsonRpc
         private readonly EndPoint m_endPoint;
         Socket m_socket;
         CancellationTokenSource m_terminate = new();
-        Thread m_thread;
+        Thread? m_thread;
     }
 }

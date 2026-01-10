@@ -17,8 +17,8 @@ namespace JsonRpc
         public void Dispose()
         {
             m_terminate.Cancel();
-            m_socket.Close();
             m_thread.Join();
+            m_socket.Dispose();
         }
 
         private async void Listen()
@@ -30,9 +30,9 @@ namespace JsonRpc
                     var socket = await m_socket.AcceptAsync(m_terminate.Token);
                     if (socket != null)
                     {
-                        var activeSocket = new ActiveTcpSocket(socket);
-                        ClientConnected(activeSocket);
-                        activeSocket.StartListening();
+                        var activeTcpSocket = new ActiveTcpSocket(socket);
+                        ClientConnected(activeTcpSocket);
+                        activeTcpSocket.StartListening();
                     }
                 }
             } catch (Exception ex) { 

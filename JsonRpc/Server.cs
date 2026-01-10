@@ -21,7 +21,10 @@ namespace JsonRpc
         {
             m_mutex.WaitOne();
             m_requestProcessors.Clear();
+            foreach (var s in m_activeSockets.Values)
+                s.Dispose();
             m_activeSockets.Clear();
+            m_passiveSocket.Dispose();
             m_mutex.ReleaseMutex();
         }
 
@@ -39,7 +42,7 @@ namespace JsonRpc
             m_mutex.WaitOne();
             m_activeSockets.Add(a_socket.ConnectionId, a_socket);
             var requestProcessor = new RequestProcessor(m_methodRegistry, m_exceptionConverter);
-            a_socket.ReceivedMsg += (s) => { a_socket.Send(requestProcessor.HandleRequest(s)); };
+            a_socket.ReceivedMsg += (s) => { s = requestProcessor.HandleRequest(s); if (s != "null") a_socket.Send(s); };
             a_socket.ConnectionChanged += (bool c) => { if (!c) OnClientDisconnected(a_socket.ConnectionId); };
             m_requestProcessors.Add(a_socket.ConnectionId, requestProcessor);
             m_mutex.ReleaseMutex();
