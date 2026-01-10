@@ -18,3 +18,9 @@ public interface IReceptionClient : IDisposable
     public event Action<int, Order.EState> OrderStateChanged;
 }
 ```
+
+with
+- JSON-RPC Notifications (```StartOrder```)
+- Async JSON-RPC Requests (```AppendOrder``` and ```GetOrder```)
+- Subscriptions (```OrderStateChanged```)
+- Custom Exceptions (```OrderNotFoundException```)
