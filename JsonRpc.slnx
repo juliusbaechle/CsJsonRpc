@@ -1,5 +1,6 @@
 <Solution>
   <Folder Name="/doc/">
+    <File Path="README.md" />
     <File Path="todos.txt" />
   </Folder>
   <Folder Name="/Prototype/">

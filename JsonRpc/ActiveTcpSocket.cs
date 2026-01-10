@@ -32,8 +32,8 @@ namespace JsonRpc
         public void Dispose()
         {
             m_terminate.Cancel();
-            m_thread?.Join();
             m_socket.Shutdown(SocketShutdown.Both);
+            m_thread?.Join();
             m_socket.Dispose();
         }
 

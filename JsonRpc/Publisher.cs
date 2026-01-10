@@ -18,6 +18,7 @@ namespace JsonRpc
         {
             m_server.Remove("Subscribe");
             m_server.Remove("Unsubscribe");
+            m_connector.Dispose();
         }
 
         public void Add(string a_subscription)

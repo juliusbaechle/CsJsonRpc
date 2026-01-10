@@ -48,6 +48,10 @@ namespace Tests
             var jsonRpcEx = new JsonRpcException(JsonRpcException.ErrorCode.internal_error, "exception occured");
             mock.Response = """{"id":0, "jsonrpc":"2.0", "error":""" + JsonSerializer.Serialize(jsonRpcEx) + "}";
             await Assert.ThrowsAsync<JsonRpcException>(async () => await client.Request<int>("startOrder"));
+
+            jsonRpcEx = new JsonRpcException(JsonRpcException.ErrorCode.internal_error, "exception occured");
+            mock.Response = """{"id":1, "jsonrpc":"2.0", "error":""" + JsonSerializer.Serialize(jsonRpcEx) + "}";
+            await Assert.ThrowsAsync<JsonRpcException>(async () => await client.Request("startOrder"));
         }
 
         [TestMethod]

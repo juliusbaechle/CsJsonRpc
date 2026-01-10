@@ -1,8 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Text;
-
-namespace JsonRpc
+﻿namespace JsonRpc
 {
     public class PblConnector : IDisposable
     {
@@ -14,45 +10,43 @@ namespace JsonRpc
 
         public void Dispose()
         {
-            m_lock.AcquireWriterLock(0);
-            foreach (var c in m_clients.Values)
-                c.Dispose();
-            m_lock.ReleaseWriterLock();
+            lock (m_mutex)
+            {
+                foreach (var c in m_clients.Values)
+                    c.Dispose();
+                m_socket.Dispose();
+            }
         }
 
         public void Send(long a_id, string a_msg)
         {
-            m_lock.AcquireReaderLock(0);
-            IActiveSocket? socket = null;
-            if (m_clients.TryGetValue(a_id, out socket))
-                socket.Send(a_msg);
-            m_lock.ReleaseReaderLock();
+            lock (m_mutex)
+            {
+                IActiveSocket? socket = null;
+                if (m_clients.TryGetValue(a_id, out socket))
+                    socket.Send(a_msg);
+            }
         }
 
         public void SendAll(string a_msg)
         {
-            m_lock.AcquireReaderLock(0);
-            foreach (var c in m_clients.Values)
-                c.Send(a_msg);
-            m_lock.ReleaseReaderLock();
+            lock(m_mutex)
+            {
+                foreach (var c in m_clients.Values)
+                    c.Send(a_msg);
+            }
         }
 
         public bool IsConnected(long a_id)
         {
-            bool result = false;
-            m_lock.AcquireReaderLock(0);
-            result = m_clients.ContainsKey(a_id);
-            m_lock.ReleaseReaderLock();
-            return result;
+            lock (m_mutex)
+                return m_clients.ContainsKey(a_id);
         }
 
         public List<long> AllConnected()
         {
-            List<long> result = [];
-            m_lock.AcquireReaderLock(0);
-            result = m_clients.Keys.ToList<long>();
-            m_lock.ReleaseReaderLock();
-            return result;
+            lock (m_mutex)
+                return m_clients.Keys.ToList();
         }
         
         public event Action<long, string> ReceivedMsg = (i, s) => { };
@@ -60,9 +54,8 @@ namespace JsonRpc
 
         private void OnClientConnected(IActiveSocket a_socket)
         {
-            m_lock.AcquireWriterLock(0);
-            m_clients[a_socket.ConnectionId] = a_socket;
-            m_lock.ReleaseWriterLock();
+            lock (m_mutex) 
+                m_clients[a_socket.ConnectionId] = a_socket;
             a_socket.ReceivedMsg += (s) => { ReceivedMsg(a_socket.ConnectionId, s); };
             a_socket.ConnectionChanged += (b) => { OnConnectionChanged(a_socket.ConnectionId, b); };
         }
@@ -71,14 +64,15 @@ namespace JsonRpc
         {
             if (a_connected || !m_clients.ContainsKey(a_id))
                 return;
-            m_lock.AcquireWriterLock(0);
-            m_clients[a_id].Dispose();
-            m_clients.Remove(a_id);
-            m_lock.ReleaseWriterLock();
+            lock(m_mutex)
+            {
+                m_clients[a_id].Dispose();
+                m_clients.Remove(a_id);
+            }
             ConnectionChanged(a_id, a_connected);
         }
 
-        private ReaderWriterLock m_lock = new();
+        private Mutex m_mutex = new();
         private Dictionary<long, IActiveSocket> m_clients = [];
         IPassiveSocket m_socket;
     }

@@ -1,7 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Text;
-using System.Text.Json.Nodes;
+﻿using System.Text.Json.Nodes;
 
 namespace JsonRpc
 {
@@ -32,7 +29,7 @@ namespace JsonRpc
             return m_client.Request("Subscribe", new JsonObject { { "Subscription", a_subscription }, { "ClientId", m_socket.ConnectionId } });
         }
 
-        public Task Unsubscribe(string a_subscription)
+        public Task UnsubscribeAsync(string a_subscription)
         {
             if (!m_methodRegistry.Contains(a_subscription))
                 throw new JsonRpcException(JsonRpcException.ErrorCode.subscription_not_found, "subscr. " + a_subscription + " does not exist");

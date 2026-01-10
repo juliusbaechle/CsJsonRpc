@@ -1,8 +1,5 @@
 ﻿using JsonRpc;
-using System;
-using System.Collections.Generic;
 using System.Net;
-using System.Text;
 
 namespace Tests
 {
@@ -30,17 +27,27 @@ namespace Tests
             await Task.WhenAll(clientSocket.ConnectAsync(), subscriberSocket.ConnectAsync());
 
             publisher.Add("Subscription");
+            Assert.Throws<JsonRpcException>(() => { publisher.Add("Subscription"); });
+            Assert.Throws<JsonRpcException>(() => { publisher.Remove("NotContained"); });
+            Assert.IsTrue(publisher.Contains("Subscription"));
 
             TaskCompletionSource subscriberCalled = new();
             await subscriber.SubscribeAsync("Subscription", () => { subscriberCalled.SetResult(); });
 
+            Assert.IsTrue(publisher.IsActive("Subscription"));
+
             publisher.Publish("Subscription");
             await subscriberCalled.Task;
 
-            serverSocket.Dispose();
-            clientSocket.Dispose();
-            publisherSocket.Dispose();
-            subscriberSocket.Dispose();
+            await subscriber.UnsubscribeAsync("Subscription");
+            
+            publisher.Remove("Subscription");
+            Assert.IsFalse(publisher.Contains("Subscription"));
+
+            publisher.Dispose();
+            server.Dispose();
+            subscriber.Dispose();
+            client.Dispose();
         }
     }
 }
