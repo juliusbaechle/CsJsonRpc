@@ -14,11 +14,6 @@ namespace JsonRpc
             m_exceptionConverter = a_exceptionConverter;
         }
 
-        public void Add(string a_methodName, Delegate a_delegate, List<string>? a_mapping = null)
-        {
-            m_registry.Add(a_methodName, a_delegate, a_mapping);
-        }
-
         public string HandleRequest(string a_request) {
             try
             {

@@ -21,18 +21,14 @@ namespace Tests
             : base(message, innerException)
         { }
 
-        public static implicit operator JsonNode(MyException e)
+        public static implicit operator JsonObject(MyException e)
         {
-            var n = new JsonObject();
-            n["message"] = e.Message;
-            return n;
+            return new JsonObject{ { "message", e.Message } };
         }
 
-        public static implicit operator MyException(JsonNode n)
+        public static implicit operator MyException(JsonObject o)
         {
-            var o = n.AsObject();
-            var msg = o["message"].GetValue<string>();
-            return new MyException(msg);
+            return new MyException(o["message"]?.GetValue<string>() ?? "");
         }
     }
 
@@ -44,10 +40,10 @@ namespace Tests
         public async Task EncodeAndDecodeException()
         {
             var converter = new ExceptionConverter();
-            converter.RegisterException<MyException>(
+            converter.Register<MyException>(
                 nameof(MyException), 
-                (ex) => { return (MyException) ex; }, 
-                (n) => { return (MyException) n; }
+                (ex) => { return ex; }, 
+                (n) => { return n; }
             );
 
             var sntEx = new MyException("Exception");
@@ -73,10 +69,10 @@ namespace Tests
         public async Task DecodeUnregisteredException()
         {
             var converter1 = new ExceptionConverter();
-            converter1.RegisterException<MyException>(
+            converter1.Register<MyException>(
                 nameof(MyException),
                 (ex) => { return (MyException)ex; },
-                (n) => { return (MyException)n; }
+                (o) => { return (MyException)o; }
             );
 
             var sntEx = new MyException("Exception");
@@ -106,10 +102,10 @@ namespace Tests
         public async Task EncodingThrowsException()
         {
             var converter = new ExceptionConverter();
-            converter.RegisterException<MyException>(
+            converter.Register<MyException>(
                 nameof(MyException),
                 (ex) => { throw new Exception(); },
-                (n) => { return (MyException)n; }
+                (o) => { return (MyException)o; }
             );
 
             var sntEx = new MyException("Exception");

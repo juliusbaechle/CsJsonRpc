@@ -69,7 +69,7 @@ namespace Tests
             await Assert.ThrowsAsync<JsonRpcException>(async () => await client.Request<int>("method"));
         
             mock.Response = """{"id":4, "jsonrpc":"2.0", "result":"invalid result"}""";
-            await Assert.ThrowsAsync<InvalidOperationException>(async () => await client.Request<int>("method"));
+            await Assert.ThrowsAsync<JsonException>(async () => await client.Request<int>("method"));
 
             client.Dispose();
         }

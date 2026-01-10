@@ -14,7 +14,7 @@ namespace Tests
         {
             var registry = new MethodRegistry();
             var processor = new RequestProcessor(registry, new());
-            processor.Add("Subtract", (int minuend, int subtrahend) => { return minuend - subtrahend; }, ["Minuend", "Subtrahend"]);
+            registry.Add("Subtract", (int minuend, int subtrahend) => { return minuend - subtrahend; }, ["Minuend", "Subtrahend"]);
             
             var request = JsonSerializer.Serialize(JsonBuilders.Request(null, "Subtract", new JsonObject { { "Minuend", 3 }, { "Subtrahend", 1 } }));
             var response = processor.HandleRequest(request);
@@ -32,7 +32,7 @@ namespace Tests
         {
             var registry = new MethodRegistry();
             var processor = new RequestProcessor(registry, new());
-            processor.Add("HandleNull", (JsonObject? obj) => { return; }, ["Object"]);
+            registry.Add("HandleNull", (JsonObject? obj) => { return; }, ["Object"]);
 
             var request = JsonSerializer.Serialize(JsonBuilders.Request(1, "HandleNull", new JsonObject { { "Object", null } }));
             var response = processor.HandleRequest(request);
@@ -47,7 +47,7 @@ namespace Tests
             var processor = new RequestProcessor(registry, new());
 
             List<int> recv_params = [];
-            processor.Add("SetParam", (List<int> a_params) => { recv_params = a_params; });
+            registry.Add("SetParam", (List<int> a_params) => { recv_params = a_params; });
             var sent_params = new List<int>([1, 2, 3, 4]);
             var request = JsonSerializer.Serialize(JsonBuilders.Notify("SetParam", new JsonArray([JsonSerializer.SerializeToNode(sent_params)])));
             var response = processor.HandleRequest(request);
@@ -103,11 +103,11 @@ namespace Tests
         }
 
         [TestMethod]
-        public async Task ExceptionInMethod()
+        public async Task UnregisteredExceptionInMethod()
         {
             var registry = new MethodRegistry();
             var processor = new RequestProcessor(registry, new());
-            processor.Add("ThrowException", () => { throw new ArgumentNullException(); });
+            registry.Add("ThrowException", () => { throw new ArgumentNullException(); });
 
             // Method not found
             var request = JsonSerializer.Serialize(JsonBuilders.Request(1, "ThrowException"));
@@ -116,12 +116,35 @@ namespace Tests
         }
 
         [TestMethod]
+        public async Task RegisteredExceptionInMethod()
+        {
+            var registry = new MethodRegistry();
+            var exceptionConverter = new ExceptionConverter();
+            exceptionConverter.Register<ArgumentNullException>(
+                "ArgumentNullException",
+                (ex) => { return new JsonObject{ { "paramName", ex.ParamName }, { "message", ex.Message } }; },
+                (n) => { return new(n["paramName"]?.GetValue<string>(), n["message"]?.GetValue<string>()); }
+            );
+
+            var processor = new RequestProcessor(registry, exceptionConverter);
+            registry.Add("ThrowException", () => { throw new ArgumentNullException(); });
+
+            var request = JsonSerializer.Serialize(JsonBuilders.Request(1, "ThrowException"));
+            var result = processor.HandleRequest(request);
+
+            var json = JsonDocument.Parse(result).Deserialize<JsonNode>();
+            var ex = exceptionConverter.Decode(json["error"]);
+
+            Assert.IsInstanceOfType<ArgumentNullException>(ex);
+        }
+
+        [TestMethod]
         public async Task HandleBatchRequest()
         {
             var registry = new MethodRegistry();
             var processor = new RequestProcessor(registry, new());
-            processor.Add("Add", (int a, int b) => { return a + b; });
-            processor.Add("Increment", (int a) => { return a + 1; });
+            registry.Add("Add", (int a, int b) => { return a + b; });
+            registry.Add("Increment", (int a) => { return a + 1; });
 
             var req = new JsonArray();
             req.Add(JsonBuilders.Request(1, "Add", new JsonArray([1, 2])));
