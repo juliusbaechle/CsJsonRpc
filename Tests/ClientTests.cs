@@ -12,7 +12,7 @@ namespace Tests
         [TestMethod]
         public async Task CallMethods()
         {
-            var mock = new ActiveSocketMock();
+            var mock = new ActiveMockSocket();
             var client = new Client(mock, new());
 
             // Void-Request, No parameters
@@ -42,7 +42,7 @@ namespace Tests
         [TestMethod]
         public async Task ReceivesExceptions()
         {
-            var mock = new ActiveSocketMock();
+            var mock = new ActiveMockSocket();
             var client = new Client(mock, new());
 
             var jsonRpcEx = new JsonRpcException(JsonRpcException.ErrorCode.internal_error, "exception occured");
@@ -57,7 +57,7 @@ namespace Tests
         [TestMethod]
         public async Task HandlesInvalidResponses()
         {
-            var mock = new ActiveSocketMock();
+            var mock = new ActiveMockSocket();
             var client = new Client(mock, new());
         
             mock.Response = "(XXX---XXX)";

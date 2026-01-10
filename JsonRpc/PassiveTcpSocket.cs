@@ -36,7 +36,7 @@ namespace JsonRpc
                     }
                 }
             } catch (Exception ex) { 
-                Console.WriteLine(ex.ToString());
+                Logging.LogError(ex.ToString());
             }            
         }
 

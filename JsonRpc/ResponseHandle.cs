@@ -22,7 +22,7 @@ namespace JsonRpc
         public void SetResult(JsonNode a_result)
         {
             if (a_result != null)
-                Console.WriteLine("INFO: Discarded result \"" + a_result + "\"");
+                Logging.LogDebug("Discarded result \"" + a_result + "\"");
             m_source.SetResult();
         }
 

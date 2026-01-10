@@ -39,10 +39,11 @@ namespace JsonRpc
 
         private async void Run()
         {
-            try
+            while (!m_terminate.IsCancellationRequested)
             {
-                while (!m_terminate.IsCancellationRequested)
+                try
                 {
+                
                     if (m_connected)
                     {
                         await ConnectedState();
@@ -53,8 +54,8 @@ namespace JsonRpc
                         SetConnected(m_socket.Connected);
                     }
                 }
-            }
-            catch (Exception) { }
+                catch (Exception ex) { }
+        }
         }
 
         private async Task ConnectedState()
@@ -75,8 +76,9 @@ namespace JsonRpc
                 buffer = buffer + Encoding.UTF8.GetString(arr, 0, bytes_rec);
                 if (buffer.Last() == 3)
                 {
-                    Console.WriteLine("DEBUG: Received: " + buffer);
-                    ReceivedMsg(buffer.Substring(0, buffer.Length - 1));
+                    var msg = buffer.Substring(0, buffer.Length - 1);
+                    ReceivedMsg(msg);
+                    Logging.LogDebug("Received: " + msg);
                     buffer = "";
                 }
             }
@@ -107,7 +109,7 @@ namespace JsonRpc
 
         public void Send(string a_msg)
         {
-            Console.WriteLine("DEBUG: Sent: " + a_msg);
+            Logging.LogDebug("Sent: " + a_msg);
             var encoded = Encoding.UTF8.GetBytes(a_msg + (char)3);
             var buffer = new ArraySegment<byte>(encoded, 0, encoded.Length);
             m_socket.Send(buffer);

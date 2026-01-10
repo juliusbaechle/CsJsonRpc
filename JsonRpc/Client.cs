@@ -75,19 +75,19 @@ namespace JsonRpc
                 response = json.Deserialize<JsonObject>();
                 if (response == null)
                 {
-                    Console.WriteLine("ERROR: response was null");
+                    Logging.LogInfo("Response was null");
                     return;
                 }
             } catch (JsonException ex) 
             {
-                Console.WriteLine("ERROR: invalid server response: " + ex.Message);
+                Logging.LogError("Invalid server response: " + ex.Message);
                 return;
             }
 
             var handle = TakeHandle(response["id"].GetValue<int>());
             if (handle == null)
             {
-                Console.WriteLine("ERROR: invalid server response: backlog doesn't contain handle with corresponding id");
+                Logging.LogError("Invalid server response: backlog doesn't contain handle with corresponding id");
                 return;
             }
 

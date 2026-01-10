@@ -53,7 +53,7 @@ namespace JsonRpc
                 }
                 catch (Exception ex)
                 {
-                    Console.WriteLine("WARNING: Failed to send subscr. " + a_subscription + " to client " + id);
+                    Logging.LogWarning("Failed to send subscr. " + a_subscription + " to client " + id);
                 }
             }
             m_mutex.ReleaseMutex();

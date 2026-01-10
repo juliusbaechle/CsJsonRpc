@@ -32,11 +32,14 @@ namespace Client
                             await RequestInvalidOrder();
                             break;
                     }
-                    Thread.Sleep(1000);
                 }
                 catch (Exception e)
                 {
                     Console.WriteLine("ERROR: Failed to execute action: " + e.Message);
+                } 
+                finally
+                {
+                    Thread.Sleep(1000);
                 }
             }
         }

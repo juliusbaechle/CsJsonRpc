@@ -4,6 +4,13 @@ using System.Text;
 
 namespace JsonRpc
 {
-    public enum LogSeverity { Debug, Info, Warning, Error };
-    public delegate void LogHandler(String msg, LogSeverity severity);
+    public static class Logging
+    {
+        internal static void LogDebug(string msg) { LogHandler("DEBUG: " + msg); }
+        internal static void LogInfo(string msg) { LogHandler("INFO : " + msg); }
+        internal static void LogWarning(string msg) { LogHandler("WARN : " + msg); }
+        internal static void LogError(string msg) { LogHandler("ERROR: " + msg); }
+
+        public static event Action<string> LogHandler = Console.WriteLine;
+    }
 }
