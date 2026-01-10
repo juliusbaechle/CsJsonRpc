@@ -22,7 +22,7 @@ namespace JsonRpc
         public void SetResult(JsonNode a_result)
         {
             if (a_result != null)
-                Console.WriteLine("INFO: Result \"" + a_result + "\" was discarded");
+                Console.WriteLine("INFO: Discarded result \"" + a_result + "\"");
             m_source.SetResult();
         }
 
@@ -50,7 +50,7 @@ namespace JsonRpc
 
         public void SetResult(JsonNode a_result)
         {
-            m_source.SetResult(a_result.GetValue<T>());
+            m_source.SetResult(a_result.Deserialize<T>());
         }
 
         public void SetException(Exception a_ex)
