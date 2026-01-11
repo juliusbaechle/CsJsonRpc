@@ -1,7 +1,6 @@
 ﻿using System.Reflection;
 using System.Text.Json;
 using System.Text.Json.Nodes;
-using System.Xml.Linq;
 
 namespace JsonRpc {
     internal class ParamConverter {

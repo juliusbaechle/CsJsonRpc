@@ -10,13 +10,10 @@ namespace JsonRpc {
             m_exceptionConverter = new();
             m_processor = new(m_methodRegistry, m_exceptionConverter);
             m_socket.ReceivedMsg += (s) => { m_socket.Send(m_processor.HandleRequest(s)); };
-            m_subscriptions = [];
         }
 
         public void Dispose() {
-            m_mutex.WaitOne();
             m_socket.Dispose();
-            m_mutex.ReleaseMutex();
         }
 
         public Task SubscribeAsync(string a_subscription, Delegate a_delegate, List<string>? a_mapping = null) {
@@ -43,12 +40,10 @@ namespace JsonRpc {
             return m_methodRegistry.Contains(a_subscription);
         }
 
-        private Mutex m_mutex = new();
         private Client m_client;
         private IActiveSocket m_socket;
         private MethodRegistry m_methodRegistry;
         private ExceptionConverter m_exceptionConverter;
         private RequestProcessor m_processor;
-        private List<string> m_subscriptions;
     }
 }

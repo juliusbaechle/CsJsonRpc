@@ -1,8 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Text;
-
-namespace JsonRpc {
+﻿namespace JsonRpc {
     public static class Logging {
         internal static void LogDebug(string msg) { LogHandler("DEBUG: " + msg); }
         internal static void LogInfo(string msg) { LogHandler("INFO : " + msg); }

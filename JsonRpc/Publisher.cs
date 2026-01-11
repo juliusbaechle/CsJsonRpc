@@ -33,45 +33,45 @@ namespace JsonRpc {
         }
 
         public void Publish(string a_subscription, JsonNode? a_params = null) {
-            m_mutex.WaitOne();
-            CheckRegistered(a_subscription);
-            string publication = JsonSerializer.Serialize(JsonBuilders.Notify(a_subscription, a_params));
+            using (new ReadContext(m_lock)) {
+                CheckRegistered(a_subscription);
+                string publication = JsonSerializer.Serialize(JsonBuilders.Notify(a_subscription, a_params));
 
-            foreach (var id in m_subscriptions[a_subscription])
-                m_connector.Send(id, publication);
-            m_mutex.ReleaseMutex();
+                foreach (var id in m_subscriptions[a_subscription])
+                    m_connector.Send(id, publication);
+            }
         }
 
         private void Subscribe(string a_subscription, long a_clientId) {
-            m_mutex.WaitOne();
-            CheckRegistered(a_subscription);
-            if (!m_subscriptions[a_subscription].Contains(a_clientId))
-                m_subscriptions[a_subscription].Add(a_clientId);
-            m_mutex.ReleaseMutex();
+            using (new WriteContext(m_lock)) {
+                CheckRegistered(a_subscription);
+                if (!m_subscriptions[a_subscription].Contains(a_clientId))
+                    m_subscriptions[a_subscription].Add(a_clientId);
+            }
         }
 
         private void Unsubscribe(string a_subscription, long a_clientId) {
-            m_mutex.WaitOne();
-            CheckRegistered(a_subscription);
-            m_subscriptions[a_subscription].Remove(a_clientId);
-            m_mutex.ReleaseMutex();
+            using (new WriteContext(m_lock)) {
+                CheckRegistered(a_subscription);
+                m_subscriptions[a_subscription].Remove(a_clientId);
+            }
         }
 
         private void OnConnectionChanged(long a_clientId, bool a_connected) {
             if (!a_connected) {
-                m_mutex.WaitOne();
-                foreach (var subscription in m_subscriptions.Keys)
-                    m_subscriptions[subscription].Remove(a_clientId);
-                m_mutex.ReleaseMutex();
+                using (new WriteContext(m_lock)) {
+
+                    foreach (var subscription in m_subscriptions.Keys)
+                        m_subscriptions[subscription].Remove(a_clientId);
+                }
             }
         }
 
         public bool IsActive(string a_subscription) {
-            m_mutex.WaitOne();
-            CheckRegistered(a_subscription);
-            bool result = m_subscriptions[a_subscription].Count > 0;
-            m_mutex.ReleaseMutex();
-            return result;
+            using (new ReadContext(m_lock)) {
+                CheckRegistered(a_subscription);
+                return m_subscriptions[a_subscription].Count > 0;
+            }
         }
 
         private void CheckRegistered(string a_subscription) {
@@ -79,7 +79,7 @@ namespace JsonRpc {
                 throw new JsonRpcException(JsonRpcException.ErrorCode.subscription_not_found, "subscription " + a_subscription + " does not exist");
         }
 
-        private Mutex m_mutex = new();
+        private ReaderWriterLock m_lock = new();
         private Server m_server;
         private Dictionary<string, List<long>> m_subscriptions = [];
         private PblConnector m_connector;
