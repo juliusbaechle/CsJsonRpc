@@ -2,9 +2,9 @@
 
 namespace Tests.Mocks
 {
-    public class ActiveSocketMock : IActiveSocket
+    public class ServerMock : IActiveSocket
     {
-        public ActiveSocketMock(string a_response = "") { Response = a_response; }
+        public ServerMock(string a_response = "") { Response = a_response; }
 
         public event Action<string> ReceivedMsg = (s) => { };
         public event Action<bool> ConnectionChanged = (b) => { };

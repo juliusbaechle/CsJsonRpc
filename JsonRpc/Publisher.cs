@@ -10,14 +10,14 @@ namespace JsonRpc
             m_server = a_server;
             m_connector = new PblConnector(a_socket);
             m_connector.ConnectionChanged += OnConnectionChanged;
-            a_server.Add("Subscribe", Subscribe, ["Subscription", "ClientId"]);
-            a_server.Add("Unsubscribe", Unsubscribe, ["Subscription", "ClientId"]);
+            a_server.MethodRegistry.Add("Subscribe", Subscribe, ["Subscription", "ClientId"]);
+            a_server.MethodRegistry.Add("Unsubscribe", Unsubscribe, ["Subscription", "ClientId"]);
         }
 
         public void Dispose()
         {
-            m_server.Remove("Subscribe");
-            m_server.Remove("Unsubscribe");
+            m_server.MethodRegistry.Remove("Subscribe");
+            m_server.MethodRegistry.Remove("Unsubscribe");
             m_connector.Dispose();
         }
 
@@ -46,16 +46,7 @@ namespace JsonRpc
             string publication = JsonSerializer.Serialize(JsonBuilders.Notify(a_subscription, a_params));
 
             foreach (var id in m_subscriptions[a_subscription])
-            {
-                try
-                {
-                    m_connector.Send(id, publication);
-                }
-                catch (Exception ex)
-                {
-                    Logging.LogWarning("Failed to send subscr. " + a_subscription + " to client " + id);
-                }
-            }
+                m_connector.Send(id, publication);
             m_mutex.ReleaseMutex();
         }
 
@@ -78,13 +69,12 @@ namespace JsonRpc
 
         private void OnConnectionChanged(long a_clientId, bool a_connected)
         {
-            if (a_connected)
-                return;
-
-            m_mutex.WaitOne();
-            foreach (var subscription in m_subscriptions.Keys)
-                m_subscriptions[subscription].Remove(a_clientId);
-            m_mutex.ReleaseMutex();
+            if (!a_connected) {
+                m_mutex.WaitOne();
+                foreach (var subscription in m_subscriptions.Keys)
+                    m_subscriptions[subscription].Remove(a_clientId);
+                m_mutex.ReleaseMutex();
+            }
         }
 
         public bool IsActive(string a_subscription)

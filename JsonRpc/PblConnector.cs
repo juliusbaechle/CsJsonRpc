@@ -62,14 +62,15 @@
 
         private void OnConnectionChanged(long a_id, bool a_connected)
         {
-            if (a_connected || !m_clients.ContainsKey(a_id))
-                return;
-            lock(m_mutex)
+            if (!a_connected && m_clients.ContainsKey(a_id))
             {
-                m_clients[a_id].Dispose();
-                m_clients.Remove(a_id);
+                lock (m_mutex)
+                {
+                    m_clients[a_id].Dispose();
+                    m_clients.Remove(a_id);
+                }
+                ConnectionChanged(a_id, a_connected);
             }
-            ConnectionChanged(a_id, a_connected);
         }
 
         private Mutex m_mutex = new();

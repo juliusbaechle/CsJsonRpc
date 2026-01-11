@@ -13,10 +13,9 @@ namespace Server
             m_exceptionConverter = new();
             ReceptionExceptions.RegisterReceptionExceptions(m_exceptionConverter);
             m_serverSocket = new PassiveTcpSocket(new IPEndPoint(IPAddress.Loopback, WellKnownPorts.SrvPort));
-            m_server = new JsonRpc.Server(m_serverSocket, new(), m_exceptionConverter);
+            m_server = new JsonRpc.Server(m_serverSocket, SetupMethodRegistry(), m_exceptionConverter);
             m_pblSocket = new PassiveTcpSocket(new IPEndPoint(IPAddress.Loopback, WellKnownPorts.PblPort));
             m_publisher = new JsonRpc.Publisher(m_server, m_pblSocket);
-            SetupMethods();
             SetupSubscriptions();
         }
 
@@ -26,11 +25,13 @@ namespace Server
             m_publisher.Dispose();
         }
 
-        private void SetupMethods()
+        private MethodRegistry SetupMethodRegistry()
         {
-            m_server.Add("AppendOrder", m_reception.AppendOrder, [ "Order" ]);
-            m_server.Add("StartOrder", m_reception.StartOrder, [ "OrderId" ]);
-            m_server.Add("GetOrder", m_reception.GetOrder, [ "OrderId" ]);
+            MethodRegistry registry = new();
+            registry.Add("AppendOrder", m_reception.AppendOrder, [ "Order" ]);
+            registry.Add("StartOrder", m_reception.StartOrder, [ "OrderId" ]);
+            registry.Add("GetOrder", m_reception.GetOrder, [ "OrderId" ]);
+            return registry;
         }
 
         private void SetupSubscriptions()

@@ -6,7 +6,6 @@ namespace Client
     {
         public Task<int> AppendOrder(Order a_order);
 
-        /// May throw OrderNotFoundException
         public void StartOrder(int a_id);
 
         /// May throw OrderNotFoundException

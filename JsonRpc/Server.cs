@@ -1,11 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Net.Sockets;
-using System.Text;
-using System.Text.Json;
-using System.Text.Json.Nodes;
-
-namespace JsonRpc
+﻿namespace JsonRpc
 {
     public class Server
     {
@@ -28,14 +21,7 @@ namespace JsonRpc
             m_mutex.ReleaseMutex();
         }
 
-        public void Add(string a_methodName, Delegate a_delegate, List<string>? a_mapping = null) 
-        { m_methodRegistry.Add(a_methodName, a_delegate, a_mapping); }
-
-        public void Remove(string a_methodName)
-        { m_methodRegistry.Remove(a_methodName); }
-
-        public bool Contains(string a_methodName)
-        { return m_methodRegistry.Contains(a_methodName); }
+        public MethodRegistry MethodRegistry { get { return m_methodRegistry; } }
 
         private void AddClient(IActiveSocket a_socket)
         {

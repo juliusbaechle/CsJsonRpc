@@ -1,5 +1,6 @@
 ﻿using JsonRpc;
 using System.Net;
+using Tests.Mocks;
 
 namespace Tests
 {
@@ -9,11 +10,10 @@ namespace Tests
         [TestMethod]
         public async Task CombinesMultipleClients()
         {
-            var endpoint = new IPEndPoint(IPAddress.Loopback, 1234);
-            var passiveSocket = new PassiveTcpSocket(endpoint);
+            var passiveSocket = new PassiveMockSocket();
             var connector = new PblConnector(passiveSocket);
 
-            var client = new ActiveTcpSocket(endpoint);
+            var client = new ActiveMockSocket(passiveSocket);
 
             await client.ConnectAsync();
             Assert.IsTrue(connector.IsConnected(client.ConnectionId));
@@ -39,7 +39,7 @@ namespace Tests
 
             TaskCompletionSource disconnectTCS = new();
             connector.ConnectionChanged += (l, b) => { disconnectTCS.SetResult(); };
-            client.Dispose();
+            client.Disconnect();
             await disconnectTCS.Task;
             Assert.HasCount(0, connector.AllConnected());
 
