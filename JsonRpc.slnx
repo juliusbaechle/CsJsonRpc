@@ -1,6 +1,8 @@
 <Solution>
   <Folder Name="/doc/">
-    <File Path="README.md" />
+    <File Path="Doc/icon.png" />
+    <File Path="Doc/LICENSE" />
+    <File Path="JsonRpc/README.md" />
     <File Path="todos.txt" />
   </Folder>
   <Folder Name="/Prototype/">

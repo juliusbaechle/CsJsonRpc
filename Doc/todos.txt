@@ -1,0 +1,5 @@
+- Prototype: Custom EState conversion
+
+- Thread model of Qt
+- Request multiplexing
+- Async methods
