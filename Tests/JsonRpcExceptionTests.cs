@@ -2,22 +2,18 @@
 using System.Text.Json;
 using System.Text.Json.Nodes;
 
-namespace Tests
-{
+namespace Tests {
     [TestClass]
-    public sealed class JsonRpcExceptionTests
-    {
+    public sealed class JsonRpcExceptionTests {
         [TestMethod]
-        public async Task ValidJson()
-        {
-            var json = new JsonObject { { "code", -32603 }, { "message", "internal_error" }, { "data", new JsonObject{ } } };
+        public async Task ValidJson() {
+            var json = new JsonObject { { "code", -32603 }, { "message", "internal_error" }, { "data", new JsonObject { } } };
             JsonRpcException ex = json;
             JsonNode node = ex;
         }
 
         [TestMethod]
-        public async Task InvalidJson()
-        {
+        public async Task InvalidJson() {
             var json = new JsonObject { { "code", -32603 }, { "message", null } };
             JsonRpcException ex = json;
 

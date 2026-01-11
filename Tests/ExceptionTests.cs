@@ -5,44 +5,35 @@ using System.Text.Json;
 using System.Text.Json.Nodes;
 using Tests.Mocks;
 
-namespace Tests
-{
+namespace Tests {
     [Serializable]
-    public class MyException : Exception
-    {
-        public MyException()
-        { }
+    public class MyException : Exception {
+        public MyException() { }
 
         public MyException(string message)
-            : base(message)
-        { }
+            : base(message) { }
 
         public MyException(string message, Exception innerException)
-            : base(message, innerException)
-        { }
+            : base(message, innerException) { }
 
-        public static implicit operator JsonObject(MyException e)
-        {
-            return new JsonObject{ { "message", e.Message } };
+        public static implicit operator JsonObject(MyException e) {
+            return new JsonObject { { "message", e.Message } };
         }
 
-        public static implicit operator MyException(JsonObject o)
-        {
+        public static implicit operator MyException(JsonObject o) {
             return new MyException(o["message"]?.GetValue<string>() ?? "");
         }
     }
 
 
     [TestClass]
-    public sealed class ExceptionTests
-    {
+    public sealed class ExceptionTests {
         [TestMethod]
-        public async Task EncodeAndDecodeException()
-        {
+        public async Task EncodeAndDecodeException() {
             var converter = new ExceptionConverter();
             converter.Register<MyException>(
-                nameof(MyException), 
-                (ex) => { return ex; }, 
+                nameof(MyException),
+                (ex) => { return ex; },
                 (n) => { return n; }
             );
 
@@ -56,8 +47,7 @@ namespace Tests
         }
 
         [TestMethod]
-        public async Task EncodeUnregisteredException()
-        {
+        public async Task EncodeUnregisteredException() {
             var converter = new ExceptionConverter();
 
             var sntEx = new MyException("Exception");
@@ -66,8 +56,7 @@ namespace Tests
         }
 
         [TestMethod]
-        public async Task DecodeUnregisteredException()
-        {
+        public async Task DecodeUnregisteredException() {
             var converter1 = new ExceptionConverter();
             converter1.Register<MyException>(
                 nameof(MyException),
@@ -87,8 +76,7 @@ namespace Tests
 
 
         [TestMethod]
-        public async Task PassesJsonRpcExceptions()
-        {
+        public async Task PassesJsonRpcExceptions() {
             var converter = new ExceptionConverter();
 
             var sntEx = new JsonRpcException(JsonRpcException.ErrorCode.internal_error, "Exception");
@@ -99,8 +87,7 @@ namespace Tests
         }
 
         [TestMethod]
-        public async Task EncodingThrowsException()
-        {
+        public async Task EncodingThrowsException() {
             var converter = new ExceptionConverter();
             converter.Register<MyException>(
                 nameof(MyException),

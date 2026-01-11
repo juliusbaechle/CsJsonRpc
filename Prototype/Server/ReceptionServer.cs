@@ -3,12 +3,9 @@ using Reception_Common;
 using System.Net;
 using System.Text.Json.Nodes;
 
-namespace Server
-{
-    public class ReceptionServer : IDisposable
-    {
-        public ReceptionServer(Reception a_reception)
-        {
+namespace Server {
+    public class ReceptionServer : IDisposable {
+        public ReceptionServer(Reception a_reception) {
             m_reception = a_reception;
             m_exceptionConverter = new();
             ReceptionExceptions.RegisterReceptionExceptions(m_exceptionConverter);
@@ -19,26 +16,23 @@ namespace Server
             SetupSubscriptions();
         }
 
-        public void Dispose()
-        {
+        public void Dispose() {
             m_server.Dispose();
             m_publisher.Dispose();
         }
 
-        private MethodRegistry SetupMethodRegistry()
-        {
+        private MethodRegistry SetupMethodRegistry() {
             MethodRegistry registry = new();
-            registry.Add("AppendOrder", m_reception.AppendOrder, [ "Order" ]);
-            registry.Add("StartOrder", m_reception.StartOrder, [ "OrderId" ]);
-            registry.Add("GetOrder", m_reception.GetOrder, [ "OrderId" ]);
+            registry.Add("AppendOrder", m_reception.AppendOrder, ["Order"]);
+            registry.Add("StartOrder", m_reception.StartOrder, ["OrderId"]);
+            registry.Add("GetOrder", m_reception.GetOrder, ["OrderId"]);
             return registry;
         }
 
-        private void SetupSubscriptions()
-        {
+        private void SetupSubscriptions() {
             m_publisher.Add("OrderStateChanged");
             m_reception.OrderStateChanged += (int a_id, Order.EState a_state) => {
-                m_publisher.Publish("OrderStateChanged", new JsonObject { { "OrderId", a_id }, { "OrderState", a_state.ToString() } }); 
+                m_publisher.Publish("OrderStateChanged", new JsonObject { { "OrderId", a_id }, { "OrderState", a_state.ToString() } });
             };
         }
 

@@ -1,11 +1,8 @@
 ﻿using System.Text.Json.Nodes;
 
-namespace JsonRpc
-{
-    public class Subscriber : IDisposable
-    {
-        public Subscriber(Client a_client, IActiveSocket a_socket)
-        {
+namespace JsonRpc {
+    public class Subscriber : IDisposable {
+        public Subscriber(Client a_client, IActiveSocket a_socket) {
             m_client = a_client;
             m_socket = a_socket;
             m_socket.ConnectionChanged += OnConnectionChanged;
@@ -16,29 +13,25 @@ namespace JsonRpc
             m_subscriptions = [];
         }
 
-        public void Dispose()
-        {
+        public void Dispose() {
             m_mutex.WaitOne();
             m_socket.Dispose();
             m_mutex.ReleaseMutex();
         }
 
-        public Task SubscribeAsync(string a_subscription, Delegate a_delegate, List<string>? a_mapping = null)
-        {
+        public Task SubscribeAsync(string a_subscription, Delegate a_delegate, List<string>? a_mapping = null) {
             m_methodRegistry.Add(a_subscription, a_delegate, a_mapping);
             return m_client.Request("Subscribe", new JsonObject { { "Subscription", a_subscription }, { "ClientId", m_socket.ConnectionId } });
         }
 
-        public Task UnsubscribeAsync(string a_subscription)
-        {
+        public Task UnsubscribeAsync(string a_subscription) {
             if (!m_methodRegistry.Contains(a_subscription))
                 throw new JsonRpcException(JsonRpcException.ErrorCode.subscription_not_found, "subscr. " + a_subscription + " does not exist");
             m_methodRegistry.Remove(a_subscription);
             return m_client.Request("Unsubscribe", new JsonObject { { "Subscription", a_subscription }, { "ClientId", m_socket.ConnectionId } });
         }
 
-        private void OnConnectionChanged(bool a_connected)
-        {
+        private void OnConnectionChanged(bool a_connected) {
             if (!a_connected)
                 return;
 
@@ -46,8 +39,7 @@ namespace JsonRpc
                 m_client.Notify("Subscribe", new JsonObject { { "Subscription", subscription }, { "ClientId", m_socket.ConnectionId } });
         }
 
-        public bool IsSubscribed(string a_subscription)
-        {
+        public bool IsSubscribed(string a_subscription) {
             return m_methodRegistry.Contains(a_subscription);
         }
 

@@ -1,7 +1,5 @@
-﻿namespace JsonRpc
-{
-    public interface IActiveSocket : IDisposable
-    {
+﻿namespace JsonRpc {
+    public interface IActiveSocket : IDisposable {
         public long ConnectionId { get; }
 
         public void Send(string a_msg);

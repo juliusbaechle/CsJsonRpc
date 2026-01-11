@@ -2,14 +2,11 @@
 using System.Net;
 using Tests.Mocks;
 
-namespace Tests
-{
+namespace Tests {
     [TestClass]
-    public sealed class SubscriptionTests
-    {
+    public sealed class SubscriptionTests {
         [TestMethod]
-        public async Task NormalUseCase()
-        {
+        public async Task NormalUseCase() {
             PassiveMockSocket serverSocket = new();
             ActiveMockSocket clientSocket = new(serverSocket);
 

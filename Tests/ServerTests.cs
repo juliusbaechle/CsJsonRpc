@@ -1,14 +1,11 @@
 ﻿using JsonRpc;
 using Tests.Mocks;
 
-namespace Tests
-{
+namespace Tests {
     [TestClass]
-    public sealed class ServerTests
-    {
+    public sealed class ServerTests {
         [TestMethod]
-        public async Task Test()
-        {
+        public async Task Test() {
             PassiveMockSocket passiveSocket = new();
             MethodRegistry methodRegistry = new();
             Server server = new(passiveSocket, methodRegistry, new());

@@ -1,46 +1,39 @@
-﻿using System.Text.Json;
+﻿using System.Reflection.Metadata;
+using System.Text.Json;
 using System.Text.Json.Nodes;
 
-namespace JsonRpc
-{
-    public class Client : IDisposable
-    {
-        public Client(IActiveSocket a_socket, ExceptionConverter a_exceptionConverter)
-        {
+namespace JsonRpc {
+    public class Client : IDisposable {
+        public Client(IActiveSocket a_socket, ExceptionConverter a_exceptionConverter) {
             m_socket = a_socket;
             m_exceptionConverter = a_exceptionConverter;
             m_socket.ReceivedMsg += HandleResponse;
         }
 
-        public Task ConnectAsync()
-        {
+        public Task ConnectAsync() {
             return m_socket.ConnectAsync();
         }
 
-        public void Dispose()
-        {
+        public void Dispose() {
             m_socket.ReceivedMsg -= HandleResponse;
-            m_mutex.WaitOne();
-            foreach (var r in m_backlog.Values)
-                r.SetCanceled();
-            m_backlog.Clear();
-            m_mutex.ReleaseMutex();
+            lock (m_mutex) {
+                foreach (var r in m_backlog.Values)
+                    r.SetCanceled();
+                m_backlog.Clear();
+            }
         }
 
-        public void Notify(string a_method)
-        {
+        public void Notify(string a_method) {
             var request = JsonSerializer.Serialize(JsonBuilders.Notify(a_method));
             m_socket.Send(request);
         }
 
-        public void Notify(string a_method, JsonNode a_params)
-        {
+        public void Notify(string a_method, JsonNode a_params) {
             var request = JsonSerializer.Serialize(JsonBuilders.Notify(a_method, a_params));
             m_socket.Send(request);
         }
 
-        public Task Request(string a_method, JsonNode? a_params = null)
-        {
+        public Task Request(string a_method, JsonNode? a_params = null) {
             int id = m_nextId++;
             var handle = new ResponseHandle();
             AppendHandle(id, handle);
@@ -49,8 +42,7 @@ namespace JsonRpc
             return handle.Task;
         }
 
-        public Task<T> Request<T>(string a_method, JsonNode? a_params = null)
-        {
+        public Task<T> Request<T>(string a_method, JsonNode? a_params = null) {
             int id = m_nextId++;
             var handle = new ResponseHandle<T>();
             AppendHandle(id, handle);
@@ -59,72 +51,57 @@ namespace JsonRpc
             return handle.Task;
         }
 
-        private void AppendHandle(int a_id, IResponseHandle a_requestHandle)
-        {
-            m_mutex.WaitOne();
-            m_backlog[a_id] = a_requestHandle;
-            m_mutex.ReleaseMutex();
+        private void AppendHandle(int a_id, IResponseHandle a_requestHandle) {
+            lock (m_mutex) {
+                m_backlog[a_id] = a_requestHandle;
+            }
         }
 
-        private void HandleResponse(string a_response)
-        {
-            JsonObject? response  = null;
-            try
-            {
+        private void HandleResponse(string a_response) {
+            JsonObject? response = null;
+            try {
                 var json = JsonDocument.Parse(a_response);
                 response = json.Deserialize<JsonObject>();
-                if (response == null)
-                {
+                if (response == null) {
                     Logging.LogInfo("Response was null");
                     return;
                 }
-            } catch (JsonException ex) 
-            {
+            } catch (JsonException ex) {
                 Logging.LogError("Invalid server response: " + ex.Message);
                 return;
             }
 
             var handle = TakeHandle(response["id"].GetValue<int>());
-            if (handle == null)
-            {
+            if (handle == null) {
                 Logging.LogError("Invalid server response: backlog doesn't contain handle with corresponding id");
                 return;
             }
 
-            try
-            {
-                if (response.ContainsKey("result") == response.ContainsKey("error"))
-                {
+            try {
+                if (response.ContainsKey("result") == response.ContainsKey("error")) {
                     handle.SetException(new JsonRpcException(JsonRpcException.ErrorCode.invalid_result, """either "result" or "error" field must be contained"""));
-                }
-                else if (!response.ContainsKey("jsonrpc") || response["jsonrpc"].GetValue<string>() != "2.0")
-                {
+                } else if (!response.ContainsKey("jsonrpc") || response["jsonrpc"].GetValue<string>() != "2.0") {
                     handle.SetException(new JsonRpcException(JsonRpcException.ErrorCode.invalid_result, """ "jsonrpc" field must be "2.0" """));
-                }
-                else if (response.ContainsKey("error") && response["error"].GetValueKind() == JsonValueKind.Object)
-                {
+                } else if (response.ContainsKey("error") && response["error"].GetValueKind() == JsonValueKind.Object) {
                     handle.SetException(m_exceptionConverter.Decode(response["error"]));
-                } else
-                {
+                } else {
                     handle.SetResult(response["result"]);
                 }
-            } catch(Exception ex)
-            {
+            } catch (Exception ex) {
                 handle.SetException(ex);
             }
         }
 
-        private IResponseHandle? TakeHandle(int a_id)
-        {
-            IResponseHandle? handle = null;
-            m_mutex.WaitOne();
-            if (m_backlog.ContainsKey(a_id))
-            {
-                handle = m_backlog[a_id];
-                m_backlog.Remove(a_id);
+        private IResponseHandle? TakeHandle(int a_id) {
+            lock (m_mutex) {
+                if (m_backlog.ContainsKey(a_id)) {
+                    var handle = m_backlog[a_id];
+                    m_backlog.Remove(a_id);
+                    return handle;
+                } else {
+                    return null;
+                }
             }
-            m_mutex.ReleaseMutex();
-            return handle;
         }
 
         private Mutex m_mutex = new();

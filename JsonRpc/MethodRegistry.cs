@@ -1,12 +1,9 @@
 ﻿using System.Text.Json;
 using System.Text.Json.Nodes;
 
-namespace JsonRpc
-{
-    public class MethodRegistry
-    {
-        public void Add(string a_methodName, Delegate a_delegate, List<string>? a_mapping = null)
-        {
+namespace JsonRpc {
+    public class MethodRegistry {
+        public void Add(string a_methodName, Delegate a_delegate, List<string>? a_mapping = null) {
             m_lock.AcquireWriterLock(0);
             if (m_methods.ContainsKey(a_methodName))
                 throw new JsonRpcException(JsonRpcException.ErrorCode.internal_error, "'" + a_methodName + "' is already registered");
@@ -17,23 +14,23 @@ namespace JsonRpc
             m_lock.ReleaseWriterLock();
         }
 
-        public bool Contains(string a_methodName)
-        {
+        public bool Contains(string a_methodName) {
             m_lock.AcquireReaderLock(0);
             var contained = m_methods.ContainsKey(a_methodName);
             m_lock.ReleaseReaderLock();
             return contained;
         }
 
-        public List<string> Methods { get { 
+        public List<string> Methods {
+            get {
                 m_lock.AcquireReaderLock(0);
                 var result = m_methods.Keys.ToList<string>();
                 m_lock.ReleaseReaderLock();
                 return result;
-        } }
+            }
+        }
 
-        public void Remove(string a_methodName)
-        {
+        public void Remove(string a_methodName) {
             m_lock.AcquireWriterLock(0);
             if (!m_methods.ContainsKey(a_methodName))
                 throw new JsonRpcException(JsonRpcException.ErrorCode.internal_error, "'" + a_methodName + "' is not registered");
@@ -44,8 +41,7 @@ namespace JsonRpc
             m_lock.ReleaseWriterLock();
         }
 
-        public JsonNode? Process(string a_methodName, JsonNode? a_params)
-        {
+        public JsonNode? Process(string a_methodName, JsonNode? a_params) {
             m_lock.AcquireReaderLock(0);
             Delegate? method = null;
             if (!m_methods.TryGetValue(a_methodName, out method))
@@ -58,8 +54,7 @@ namespace JsonRpc
             return JsonSerializer.SerializeToNode(result);
         }
 
-        private JsonArray? NormalizeParameters(string a_methodName, JsonNode? a_params)
-        {
+        private JsonArray? NormalizeParameters(string a_methodName, JsonNode? a_params) {
             if (a_params == null || a_params.GetValueKind() == JsonValueKind.Null)
                 return [];
 
@@ -72,8 +67,7 @@ namespace JsonRpc
             throw new JsonRpcException(JsonRpcException.ErrorCode.invalid_request, "params field must be an array, object or null");
         }
 
-        private JsonArray NormalizeObjectParameters(string a_methodName, JsonNode a_params)
-        {
+        private JsonArray NormalizeObjectParameters(string a_methodName, JsonNode a_params) {
             m_lock.AcquireReaderLock(0);
             var paramMappings = m_paramMappings;
             m_lock.ReleaseReaderLock();
@@ -83,8 +77,7 @@ namespace JsonRpc
                 throw new JsonRpcException(JsonRpcException.ErrorCode.invalid_params, "procedure doesn't support named parameter");
 
             JsonArray parameters = [];
-            foreach (var parameter in paramMappings[a_methodName])
-            {
+            foreach (var parameter in paramMappings[a_methodName]) {
                 if (!obj.ContainsKey(parameter))
                     throw new JsonRpcException(JsonRpcException.ErrorCode.invalid_params, "missing named parameter \"" + parameter + "\"");
                 var param = obj[parameter];

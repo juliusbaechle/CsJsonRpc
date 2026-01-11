@@ -1,10 +1,8 @@
 ﻿using System.Text.Json;
 using System.Text.Json.Nodes;
 
-namespace JsonRpc
-{
-    public interface IResponseHandle
-    {
+namespace JsonRpc {
+    public interface IResponseHandle {
         public void SetResult(JsonNode a_result);
 
         public void SetException(Exception a_ex);
@@ -12,27 +10,22 @@ namespace JsonRpc
         public void SetCanceled();
     }
 
-    public class ResponseHandle : IResponseHandle
-    {
-        public ResponseHandle()
-        {
+    public class ResponseHandle : IResponseHandle {
+        public ResponseHandle() {
             m_source = new TaskCompletionSource();
         }
 
-        public void SetResult(JsonNode a_result)
-        {
+        public void SetResult(JsonNode a_result) {
             if (a_result != null)
                 Logging.LogDebug("Discarded result \"" + a_result + "\"");
             m_source.SetResult();
         }
 
-        public void SetException(Exception a_ex)
-        {
+        public void SetException(Exception a_ex) {
             m_source.SetException(a_ex);
         }
 
-        public void SetCanceled()
-        {
+        public void SetCanceled() {
             m_source.SetCanceled();
         }
 
@@ -41,25 +34,20 @@ namespace JsonRpc
         TaskCompletionSource m_source;
     }
 
-    public class ResponseHandle<T> : IResponseHandle
-    {
-        public ResponseHandle()
-        {
+    public class ResponseHandle<T> : IResponseHandle {
+        public ResponseHandle() {
             m_source = new TaskCompletionSource<T>();
         }
 
-        public void SetResult(JsonNode a_result)
-        {
+        public void SetResult(JsonNode a_result) {
             m_source.SetResult(a_result.Deserialize<T>());
         }
 
-        public void SetException(Exception a_ex)
-        {
+        public void SetException(Exception a_ex) {
             m_source.SetException(a_ex);
         }
 
-        public void SetCanceled()
-        {
+        public void SetCanceled() {
             m_source.SetCanceled();
         }
 

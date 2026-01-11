@@ -1,29 +1,24 @@
 ﻿using JsonRpc;
 using System.Net;
 
-namespace Tests
-{
+namespace Tests {
 
     [TestClass]
-    public sealed class TcpSocketTests
-    {
+    public sealed class TcpSocketTests {
         [TestMethod]
-        public async Task EchoMessage()
-        {
+        public async Task EchoMessage() {
             var endpoint = new IPEndPoint(IPAddress.Loopback, 1234);
             var server = new PassiveTcpSocket(endpoint);
             var client = new ActiveTcpSocket(endpoint);
 
             string rcv = "";
             TaskCompletionSource receivedTCS = new();
-            client.ReceivedMsg += (s) =>
-            {
+            client.ReceivedMsg += (s) => {
                 rcv = s;
                 receivedTCS.SetResult();
             };
 
-            server.ClientConnected += (IActiveSocket socket) =>
-            {
+            server.ClientConnected += (IActiveSocket socket) => {
                 socket.ReceivedMsg += socket.Send;
                 Assert.AreEqual(socket.ConnectionId, client.ConnectionId);
             };
@@ -40,8 +35,7 @@ namespace Tests
         }
 
         [TestMethod]
-        public async Task Disconnects()
-        {
+        public async Task Disconnects() {
             TaskCompletionSource disconnectTCS = new();
             var client = new ActiveTcpSocket(new IPEndPoint(IPAddress.Loopback, 1234));
             client.ConnectionChanged += (bool b) => { disconnectTCS.SetResult(); };
@@ -49,8 +43,7 @@ namespace Tests
             IActiveSocket socket = null;
             TaskCompletionSource clientConnectedTCS = new();
             var server = new PassiveTcpSocket(new IPEndPoint(IPAddress.Loopback, 1234));
-            server.ClientConnected += (s) =>
-            {
+            server.ClientConnected += (s) => {
                 socket = s;
                 clientConnectedTCS.SetResult();
             };

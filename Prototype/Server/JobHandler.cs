@@ -1,31 +1,25 @@
 ﻿using System.Timers;
 using Reception_Common;
 
-namespace Server
-{
-    internal class JobHandler : IDisposable
-    {
-        public JobHandler(Reception a_reception)
-        {
+namespace Server {
+    internal class JobHandler : IDisposable {
+        public JobHandler(Reception a_reception) {
             m_reception = a_reception;
             m_reception.OrderStateChanged += OnOrderState;
             m_timer.Elapsed += OnTimeout;
         }
 
-        public void Dispose()
-        {
+        public void Dispose() {
             m_timer.Stop();
             m_timer.Dispose();
         }
 
-        private void OnOrderState(int a_id, Order.EState a_state)
-        {
+        private void OnOrderState(int a_id, Order.EState a_state) {
             if (a_state == Order.EState.InProgress)
                 StartTimer();
         }
 
-        private void OnTimeout(object? sender, ElapsedEventArgs e)
-        {
+        private void OnTimeout(object? sender, ElapsedEventArgs e) {
             var allOrders = m_reception.GetAllOrders();
             List<Order> ordersInProgress = [];
             foreach (Order o in allOrders)
@@ -39,10 +33,8 @@ namespace Server
                 StartTimer();
         }
 
-        private void StartTimer()
-        {
-            if (!m_timer.Enabled)
-            {
+        private void StartTimer() {
+            if (!m_timer.Enabled) {
                 m_timer.Interval = 5000 + new Random().Next(0, 15000);
                 m_timer.Start();
             }

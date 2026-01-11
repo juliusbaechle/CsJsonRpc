@@ -2,14 +2,11 @@
 using System.Net;
 using Tests.Mocks;
 
-namespace Tests
-{
+namespace Tests {
     [TestClass]
-    public sealed class PblConnectorTests
-    {
+    public sealed class PblConnectorTests {
         [TestMethod]
-        public async Task CombinesMultipleClients()
-        {
+        public async Task CombinesMultipleClients() {
             var passiveSocket = new PassiveMockSocket();
             var connector = new PblConnector(passiveSocket);
 

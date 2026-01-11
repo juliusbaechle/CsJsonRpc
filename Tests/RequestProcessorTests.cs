@@ -3,19 +3,16 @@ using System.Text.Json;
 using System.Text.Json.Nodes;
 using Tests.Mocks;
 
-namespace Tests
-{
+namespace Tests {
 
     [TestClass]
-    public sealed class RequestProcessorTests
-    {
+    public sealed class RequestProcessorTests {
         [TestMethod]
-        public async Task CallMethods()
-        {
+        public async Task CallMethods() {
             var registry = new MethodRegistry();
             var processor = new RequestProcessor(registry, new());
             registry.Add("Subtract", (int minuend, int subtrahend) => { return minuend - subtrahend; }, ["Minuend", "Subtrahend"]);
-            
+
             var request = JsonSerializer.Serialize(JsonBuilders.Request(null, "Subtract", new JsonObject { { "Minuend", 3 }, { "Subtrahend", 1 } }));
             var response = processor.HandleRequest(request);
             var expc_response = JsonSerializer.Serialize(JsonBuilders.Response(null, 2));
@@ -28,21 +25,19 @@ namespace Tests
         }
 
         [TestMethod]
-        public async Task CallMethodWithNullValue()
-        {
+        public async Task CallMethodWithNullValue() {
             var registry = new MethodRegistry();
             var processor = new RequestProcessor(registry, new());
             registry.Add("HandleNull", (JsonObject? obj) => { return; }, ["Object"]);
 
             var request = JsonSerializer.Serialize(JsonBuilders.Request(1, "HandleNull", new JsonObject { { "Object", null } }));
             var response = processor.HandleRequest(request);
-            var expc_response = JsonSerializer.Serialize(JsonBuilders.Response(1, (JsonNode) null));
+            var expc_response = JsonSerializer.Serialize(JsonBuilders.Response(1, (JsonNode)null));
             Assert.AreEqual(expc_response, response);
         }
 
         [TestMethod]
-        public async Task CallNotification()
-        {
+        public async Task CallNotification() {
             var registry = new MethodRegistry();
             var processor = new RequestProcessor(registry, new());
 
@@ -56,8 +51,7 @@ namespace Tests
         }
 
         [TestMethod]
-        public async Task InvalidRequests()
-        {
+        public async Task InvalidRequests() {
             var registry = new MethodRegistry();
             var processor = new RequestProcessor(registry, new());
 
@@ -75,7 +69,7 @@ namespace Tests
             request = """{"jsonrpc": "2.0", "method":1}""";
             json = JsonDocument.Parse(processor.HandleRequest(request)).Deserialize<JsonObject>();
             Assert.AreEqual(JsonRpcException.ErrorCode.invalid_request, json["error"]["code"].Deserialize<JsonRpcException.ErrorCode>());
-            
+
             // Missing jsonrpc
             request = """{"method":"foobar"}""";
             json = JsonDocument.Parse(processor.HandleRequest(request)).Deserialize<JsonObject>();
@@ -103,8 +97,7 @@ namespace Tests
         }
 
         [TestMethod]
-        public async Task UnregisteredExceptionInMethod()
-        {
+        public async Task UnregisteredExceptionInMethod() {
             var registry = new MethodRegistry();
             var processor = new RequestProcessor(registry, new());
             registry.Add("ThrowException", () => { throw new ArgumentNullException(); });
@@ -116,13 +109,12 @@ namespace Tests
         }
 
         [TestMethod]
-        public async Task RegisteredExceptionInMethod()
-        {
+        public async Task RegisteredExceptionInMethod() {
             var registry = new MethodRegistry();
             var exceptionConverter = new ExceptionConverter();
             exceptionConverter.Register<ArgumentNullException>(
                 "ArgumentNullException",
-                (ex) => { return new JsonObject{ { "paramName", ex.ParamName }, { "message", ex.Message } }; },
+                (ex) => { return new JsonObject { { "paramName", ex.ParamName }, { "message", ex.Message } }; },
                 (n) => { return new(n["paramName"]?.GetValue<string>(), n["message"]?.GetValue<string>()); }
             );
 
@@ -139,8 +131,7 @@ namespace Tests
         }
 
         [TestMethod]
-        public async Task HandleBatchRequest()
-        {
+        public async Task HandleBatchRequest() {
             var registry = new MethodRegistry();
             var processor = new RequestProcessor(registry, new());
             registry.Add("Add", (int a, int b) => { return a + b; });

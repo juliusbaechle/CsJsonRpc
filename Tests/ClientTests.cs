@@ -3,15 +3,12 @@ using System.Text.Json;
 using System.Text.Json.Nodes;
 using Tests.Mocks;
 
-namespace Tests
-{
+namespace Tests {
 
     [TestClass]
-    public sealed class ClientTests
-    {
+    public sealed class ClientTests {
         [TestMethod]
-        public async Task CallMethods()
-        {
+        public async Task CallMethods() {
             var mock = new ServerMock();
             var client = new Client(mock, new());
 
@@ -40,8 +37,7 @@ namespace Tests
         }
 
         [TestMethod]
-        public async Task ReceivesExceptions()
-        {
+        public async Task ReceivesExceptions() {
             var mock = new ServerMock();
             var client = new Client(mock, new());
 
@@ -55,11 +51,10 @@ namespace Tests
         }
 
         [TestMethod]
-        public async Task HandlesInvalidResponses()
-        {
+        public async Task HandlesInvalidResponses() {
             var mock = new ServerMock();
             var client = new Client(mock, new());
-        
+
             mock.Response = "(XXX---XXX)";
             client.Request<int>("method");
 
@@ -68,10 +63,10 @@ namespace Tests
 
             mock.Response = """{"id":2, "jsonrpc":"2.0"}""";
             await Assert.ThrowsAsync<JsonRpcException>(async () => await client.Request<int>("method"));
-        
+
             mock.Response = """{"id":3, "error":"dummy"}""";
             await Assert.ThrowsAsync<JsonRpcException>(async () => await client.Request<int>("method"));
-        
+
             mock.Response = """{"id":4, "jsonrpc":"2.0", "result":"invalid result"}""";
             await Assert.ThrowsAsync<JsonException>(async () => await client.Request<int>("method"));
 
@@ -79,8 +74,7 @@ namespace Tests
         }
 
         [TestMethod]
-        public async Task SupportsUtf8()
-        {
+        public async Task SupportsUtf8() {
             var json = new JsonObject { { "Name", "Julius Bächle" } };
             var str = JsonSerializer.Serialize(json);
             json = JsonDocument.Parse(str).Deserialize<JsonObject>();

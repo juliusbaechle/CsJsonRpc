@@ -1,12 +1,9 @@
 ﻿using System.Text.Json;
 using System.Text.Json.Nodes;
 
-namespace JsonRpc
-{
-    public class Publisher
-    {
-        public Publisher(Server a_server, IPassiveSocket a_socket)
-        {
+namespace JsonRpc {
+    public class Publisher {
+        public Publisher(Server a_server, IPassiveSocket a_socket) {
             m_server = a_server;
             m_connector = new PblConnector(a_socket);
             m_connector.ConnectionChanged += OnConnectionChanged;
@@ -14,33 +11,28 @@ namespace JsonRpc
             a_server.MethodRegistry.Add("Unsubscribe", Unsubscribe, ["Subscription", "ClientId"]);
         }
 
-        public void Dispose()
-        {
+        public void Dispose() {
             m_server.MethodRegistry.Remove("Subscribe");
             m_server.MethodRegistry.Remove("Unsubscribe");
             m_connector.Dispose();
         }
 
-        public void Add(string a_subscription)
-        {
+        public void Add(string a_subscription) {
             if (m_subscriptions.ContainsKey(a_subscription))
                 throw new JsonRpcException(JsonRpcException.ErrorCode.internal_error, "subscription " + a_subscription + " already exists");
             m_subscriptions.Add(a_subscription, []);
         }
 
-        public void Remove(string a_subscription)
-        {
+        public void Remove(string a_subscription) {
             CheckRegistered(a_subscription);
             m_subscriptions.Remove(a_subscription);
         }
 
-        public bool Contains(string a_subscription)
-        {
+        public bool Contains(string a_subscription) {
             return m_subscriptions.ContainsKey(a_subscription);
         }
 
-        public void Publish(string a_subscription, JsonNode? a_params = null)
-        {
+        public void Publish(string a_subscription, JsonNode? a_params = null) {
             m_mutex.WaitOne();
             CheckRegistered(a_subscription);
             string publication = JsonSerializer.Serialize(JsonBuilders.Notify(a_subscription, a_params));
@@ -50,8 +42,7 @@ namespace JsonRpc
             m_mutex.ReleaseMutex();
         }
 
-        private void Subscribe(string a_subscription, long a_clientId)
-        {
+        private void Subscribe(string a_subscription, long a_clientId) {
             m_mutex.WaitOne();
             CheckRegistered(a_subscription);
             if (!m_subscriptions[a_subscription].Contains(a_clientId))
@@ -59,16 +50,14 @@ namespace JsonRpc
             m_mutex.ReleaseMutex();
         }
 
-        private void Unsubscribe(string a_subscription, long a_clientId)
-        {
+        private void Unsubscribe(string a_subscription, long a_clientId) {
             m_mutex.WaitOne();
             CheckRegistered(a_subscription);
             m_subscriptions[a_subscription].Remove(a_clientId);
             m_mutex.ReleaseMutex();
         }
 
-        private void OnConnectionChanged(long a_clientId, bool a_connected)
-        {
+        private void OnConnectionChanged(long a_clientId, bool a_connected) {
             if (!a_connected) {
                 m_mutex.WaitOne();
                 foreach (var subscription in m_subscriptions.Keys)
@@ -77,8 +66,7 @@ namespace JsonRpc
             }
         }
 
-        public bool IsActive(string a_subscription)
-        {
+        public bool IsActive(string a_subscription) {
             m_mutex.WaitOne();
             CheckRegistered(a_subscription);
             bool result = m_subscriptions[a_subscription].Count > 0;
@@ -86,8 +74,7 @@ namespace JsonRpc
             return result;
         }
 
-        private void CheckRegistered(string a_subscription)
-        {
+        private void CheckRegistered(string a_subscription) {
             if (!m_subscriptions.ContainsKey(a_subscription))
                 throw new JsonRpcException(JsonRpcException.ErrorCode.subscription_not_found, "subscription " + a_subscription + " does not exist");
         }

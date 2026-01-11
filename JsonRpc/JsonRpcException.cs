@@ -5,21 +5,17 @@ using System.Text;
 using System.Text.Json;
 using System.Text.Json.Nodes;
 
-namespace JsonRpc
-{
+namespace JsonRpc {
     [Serializable]
-    public class JsonRpcException : Exception
-    {
+    public class JsonRpcException : Exception {
         public JsonRpcException(ErrorCode a_code, string a_msg)
-            : base(a_msg)
-        {
+            : base(a_msg) {
             Code = a_code;
             Message = a_msg;
         }
 
         public JsonRpcException(ErrorCode a_code, string? a_msg, JsonNode? a_data)
-            : base(a_msg)
-        {
+            : base(a_msg) {
             Code = a_code;
             Message = a_msg;
             Data = a_data;
@@ -29,10 +25,8 @@ namespace JsonRpc
         public new JsonNode? Data { get; set; } = null;
         public new string Message { get; set; } = "";
 
-        static public implicit operator JsonRpcException(JsonNode a_json)
-        {
-            try
-            {
+        static public implicit operator JsonRpcException(JsonNode a_json) {
+            try {
                 var obj = a_json.Deserialize<JsonObject>();
                 if (obj == null)
                     return new JsonRpcException(ErrorCode.internal_error, a_json + " is null");
@@ -45,24 +39,21 @@ namespace JsonRpc
                     return new JsonRpcException(ErrorCode.internal_error, "failed to deserialize " + a_json + " into JsonRpcException");
 
                 return new JsonRpcException(code.Deserialize<ErrorCode>(), msg.Deserialize<string>(), data.Deserialize<JsonNode>());
-            } catch
-            {
+            } catch {
                 return new JsonRpcException(ErrorCode.internal_error, "failed to deserialize " + a_json + " into JsonRpcException");
             }
         }
 
-        static public implicit operator JsonNode(JsonRpcException ex)
-        {
+        static public implicit operator JsonNode(JsonRpcException ex) {
             JsonObject obj = new();
-            obj["code"] = (int) ex.Code;
+            obj["code"] = (int)ex.Code;
             obj["message"] = ex.Message;
             if (ex.Data != null)
                 obj["data"] = ex.Data;
             return obj;
         }
 
-        public enum ErrorCode
-        {
+        public enum ErrorCode {
             parse_error = -32700,
             invalid_request = -32600,
             method_not_found = -32601,

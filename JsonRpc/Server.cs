@@ -1,17 +1,13 @@
-﻿namespace JsonRpc
-{
-    public class Server
-    {
-        public Server(IPassiveSocket a_passiveSocket, MethodRegistry a_methodRegistry, ExceptionConverter a_exceptionConverter)
-        {
+﻿namespace JsonRpc {
+    public class Server {
+        public Server(IPassiveSocket a_passiveSocket, MethodRegistry a_methodRegistry, ExceptionConverter a_exceptionConverter) {
             m_passiveSocket = a_passiveSocket;
             m_methodRegistry = a_methodRegistry;
             m_exceptionConverter = a_exceptionConverter;
             m_passiveSocket.ClientConnected += AddClient;
         }
 
-        public void Dispose()
-        {
+        public void Dispose() {
             m_mutex.WaitOne();
             m_requestProcessors.Clear();
             foreach (var s in m_activeSockets.Values)
@@ -23,8 +19,7 @@
 
         public MethodRegistry MethodRegistry { get { return m_methodRegistry; } }
 
-        private void AddClient(IActiveSocket a_socket)
-        {
+        private void AddClient(IActiveSocket a_socket) {
             m_mutex.WaitOne();
             m_activeSockets.Add(a_socket.ConnectionId, a_socket);
             var requestProcessor = new RequestProcessor(m_methodRegistry, m_exceptionConverter);
@@ -34,8 +29,7 @@
             m_mutex.ReleaseMutex();
         }
 
-        private void OnClientDisconnected(long a_id)
-        {
+        private void OnClientDisconnected(long a_id) {
             m_mutex.WaitOne();
             m_activeSockets.Remove(a_id);
             m_requestProcessors.Remove(a_id);
